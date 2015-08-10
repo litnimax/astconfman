@@ -6,6 +6,8 @@ ADMINS = {
 
 ASTERISK_IPADDR = '127.0.0.1'
 
+LISTEN_ADDRESS = '127.0.0.1'
+LISTEN_PORT = 5000
 DEBUG = False
 SQLALCHEMY_ECHO = False
 DATABASE_FILE = os.path.join(os.path.dirname(__file__), 'astconfman.db')
