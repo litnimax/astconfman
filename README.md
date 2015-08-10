@@ -35,6 +35,14 @@ and
 ```
 to your /etc/asterisk/confbridge.conf.
 
-
-
+### Run WEB server
+Init database:
+```
+cd astconfman
+./manage.py init
+```
+Run:
+```
+./run.py
+```
 
