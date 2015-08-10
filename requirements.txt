@@ -1,6 +1,6 @@
 Babel
 Flask
-git+https://github.com/mrjoes/flask-admin.git
+https://github.com/flask-admin/flask-admin/archive/master.zip
 Flask-BabelEx
 Flask-HTTPAuth
 Flask-SQLAlchemy
