@@ -1,0 +1,74 @@
+{% extends 'admin/master.html' %}
+ 
+{% block body %}
+{{ super() }}
+<div class="container">
+    <div class="row">
+            <table class='table'>
+                <thead>
+                    <tr>
+                        <th>{{_('Room')}}</th>
+                        <th>{{ _('Count')}} </th>
+                        <th>{{_('Participants')}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for conf in conferences %}
+                    <tr>
+                        <td> 
+                            <div class="btn-group">
+                                    <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                                        {{conf[0]['name']}}
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                                        <li><a href="{{ url_for('.stop', room=conf[0]['name']) }}"><span class='glyphicon glyphicon-off'></span> {{ _('Kick All') }}</a></li>
+                                        <li><a href="{{ url_for('.mute', room=conf[0]['name']) }}"><span class="glyphicon glyphicon-volume-off"></span> {{ _('Mute All') }}</a></li>
+                                        <li><a href="{{ url_for('.unmute', room=conf[0]['name']) }}"><span class="glyphicon glyphicon-volume-up"></span> {{ _('Unmute All') }}</a></li>
+                                        <li><a href="{{ url_for('.record_start', room=conf[0]['name']) }}"><span class="glyphicon glyphicon-record"></span> {{ _('Start Recording') }}</a></li>
+                                        <li><a href="{{ url_for('.record_stop', room=conf[0]['name']) }}"><span class="glyphicon glyphicon-stop"></span> {{ _('Stop Recording') }}</a></li>
+                                        <li>
+                                            <form class="form-inline" action="{{ url_for('.invite', room=conf[0]['name']) }}" method="GET">
+                                                <div class="form-group">
+                                                    <input type="text" class="form-control" id="number" name="number" placeholder="{{ _('Phone number') }}">
+                                                </div>
+                                                <div class="input-group-addon">
+                                                <button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-phone-alt"></span> {{ _('Invite') }}</button>
+                                                </div>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                         
+                        </td>
+                        <td> {{ conf[0]['users']}}</td>
+                        <td>                         
+                            <div class="btn-toolbar" role="toolbar">
+                            {% for p in conf[1] %}                                                                
+                                <div class="btn-group">
+                                    <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                                        {% if 'm' in p['flags'] %} <span class="glyphicon glyphicon-volume-off"></span> {% endif %}
+                                        {% if 'A' in p['flags'] %} <span class="glyphicon glyphicon-text-color"></span> {% endif %}
+                                        {% if 'M' in p['flags'] %} <span class="glyphicon glyphicon-king"></span> {% endif %}
+                                        {{p['callerid']}} 
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                                        <li><a href="{{ url_for('.stop', room=conf[0]['name'], channel=p['channel']) }}"><span class="glyphicon glyphicon-remove"></span> {{ _('Kick') }} </a></li>
+                                        {% if 'm' in p['flags'] %} 
+                                            <li><a href="{{ url_for('.unmute', room=conf[0]['name'], channel=p['channel']) }}"><span class="glyphicon glyphicon-volume-up"></span> {{ _('Unmute') }}</a></li>
+                                        {% else %}
+                                            <li><a href="{{ url_for('.mute', room=conf[0]['name'], channel=p['channel']) }}"><span class="glyphicon glyphicon-volume-off"></span> {{ _('Mute') }}</a></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            {% endfor %}
+                            </div>
+                        </td> 
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+    </div>
+</div>
+{% endblock body %}

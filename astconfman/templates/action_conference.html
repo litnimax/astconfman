@@ -1,0 +1,47 @@
+<link href="/static/admin/bootstrap/bootstrap3/css/bootstrap.min.css?v=3.3.5" rel="stylesheet">
+        <link href="/static/admin/bootstrap/bootstrap3/css/bootstrap-theme.min.css?v=3.3.5" rel="stylesheet">
+        <link href="/static/admin/admin/css/bootstrap3/admin.css?v=1.1.1" rel="stylesheet">
+        <style>
+        body {
+            padding-top: 4px;
+        }
+</style>
+
+ <script src="/static/admin/vendor/jquery.min.js?v=2.1.4" type="text/javascript"></script>
+    <script src="/static/admin/bootstrap/bootstrap3/js/bootstrap.min.js?v=3.3.5" type="text/javascript"></script>
+    <script src="/static/admin/vendor/moment.min.js?v=2.9.0" type="text/javascript"></script>
+    <script src="/static/admin/vendor/select2/select2.min.js?v=3.5.2" type="text/javascript"></script>
+
+
+<div class='container'>
+    <form class="form" method="POST" action="{{ url_for('conference.add_contacts') }}">
+    <div class="form-group">
+        {% for i in ids %}
+            <input type="hidden" name="ids" value="{{ids|join(',')}}">
+        {% endfor %}                           
+        
+    <h1> Select a Conference </h1>
+    {% for c in conferences %}
+    <div class="radio">
+        <label>
+            <input type="radio" name="conference" id="conference-{{c.id}}" value="{{c.id}}">
+                {{ c.name }}
+        </label>
+    </div>
+    {% endfor %}
+
+    <h1> Select a Profile </h1>
+    {% for p in profiles %}
+    <div class="radio">
+        <label>
+            <input type="radio" name="profile" id="profile-{{p.id}}" value="{{p.id}}">
+                {{ p.name }}
+        </label>
+    </div>
+    {% endfor %}
+                                                         
+    <button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-retweet"></span> {{ _('Submit') }}</button>
+        
+</form>
+
+</div>

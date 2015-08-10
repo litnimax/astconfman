@@ -1,0 +1,21 @@
+{% extends 'admin/master.html' %}
+ 
+
+{% block menu_links %}
+<ul class="nav navbar-nav">
+    <li><a href="{{ url_for('conference.index_view') }}"><span class="glyphicon glyphicon-bullhorn"></span>  {{_('Conferences')}}</a></li> 
+    <li><a href="{{ url_for('participant.index_view') }}"><span class="glyphicon glyphicon-user"></span>  {{_('Participants')}}</a></li> 
+    <li><a href="{{ url_for('contact.index_view') }}"><span class="glyphicon glyphicon-book"></span>  {{_('Contacts')}}</a></li> 
+    <li><a href="{{ url_for('recording.index') }}"><span class="glyphicon glyphicon-hdd"></span>  {{_('Recordings')}}</a></li> 
+</ul>
+{% endblock menu_links %}
+
+{% block body %}
+<div class="row">
+    <div class="well well-sm"><img class="img-responsive" src="/static/pbxware.png"/></div>
+</div>
+<hr/>
+<div class="row">
+    <footer> {{ _("(C) 2015 Asterisk Guru | www.asteriskguru.ru | +7(495)2323956 | Professional Asterisk support & development services ") }} </footer>
+</div>
+{% endblock %}

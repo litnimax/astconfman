@@ -1,0 +1,158 @@
+{% extends 'admin/model/details.html' %}
+ 
+{% block head %}
+{{ super() }}
+
+    <script type="text/javascript" src="{{url_for('static', filename='js/jquery-2.1.4.min.js')}}"></script>
+    <script type="text/javascript" src="{{url_for('static', filename='js/socket.io-0.9.16.min.js')}}"></script>
+    <script src="{{url_for('static', filename='js/react-0.13.3.min.js')}}"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function(){
+            var socket = io.connect('http://' + document.domain + ':' + location.port);
+            socket.emit('join', {room: "{{'conference-%s' % model.id}}"});
+            /*
+            socket.on('connect', function() {
+                socket.emit('event', {data: "{{'Connected to Conference ID: %s' % model.id}}"});
+            }); */
+            // event handler for server sent data
+            // the data is displayed in the "Received" section of the page
+            socket.on('log_message', function(msg) {
+                var table = document.getElementById("logsTable");
+                var row = table.insertRow(0);
+                row.innerHTML = "<td style='white-space:nowrap; padding:0;'>" + msg.data + "</td>";                
+            });
+
+            var callerid = '';
+
+            function btn_class(cls) {
+                 var btn = document.getElementById("participant-" + callerid);
+                //$("participant-" + msg.callerid).css('btn btn-primary dropdown-toggle');
+                btn.className = 'btn ' + cls + ' dropdown-toggle';
+            };            
+
+            function blink1() {
+                btn_class('btn-default');                          
+                setTimeout(blink2, 600);
+            };
+
+            function blink2() {
+                btn_class('btn-primary');
+                setTimeout(blink3, 600);
+            };
+
+            function blink3() {
+                btn_class('btn-default');
+                setTimeout(blink4, 600);
+            };
+
+            function blink4() {
+                btn_class('btn-primary');
+                setTimeout(blink5, 600);
+            };
+
+            function blink5() {
+                btn_class('btn-default');
+            };
+            
+            socket.on('unmute_request', function(msg) {     
+                callerid = msg.data;
+                btn_class('btn-primary');
+                setTimeout(blink1, 600);
+            });
+
+            // handlers for the different forms in the page
+            // these send data to the server in a variety of ways
+            $('form#disconnect').submit(function(event) {
+                socket.emit('disconnect request');
+                return false;
+            });
+        });
+    </script>
+
+{% endblock %}
+
+{% block body %}
+{{ super() }}
+
+{% block details_search %}{% endblock %}
+{% block details_table %}{% endblock %}
+
+<br/>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="row">
+            <div class="container">
+                <div class="btn-group">
+                    <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                        {{_('Manage Conference')}} {{ model }}
+                        <span class="caret"></span>
+                    {% if confbridge[3] == 'locked' %}  <span class='glyphicon glyphicon-lock'></span> {% endif %} </button> 
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenu">
+                        <li><a href="{{ url_for('.invite_participants', conf_id=model.id) }}"><span class='glyphicon glyphicon-phone-alt'></span> {{ _('Invite All Participants') }}</a></li>                                        
+                        <li>
+                            <form class="form" action="{{ url_for('.invite_guest', conf_id=model.id) }}" method="GET">
+                                <div class="form-group">
+                                    <input type="text" class="form-control" id="phone" name="phone" placeholder="{{ _('Phone number') }}">
+                                </div>
+                                <div class="input-group-addon">
+                                <button type="submit" class="btn btn-default"><span class="glyphicon glyphicon-phone-alt"></span> {{ _('Invite') }}</button>
+                                </div>
+                            </form>
+                        </li>                        
+                        <li><a href="{{ url_for('.mute', conf_id=model.id) }}"><span class="glyphicon glyphicon-volume-off"></span> {{ _('Mute All') }}</a></li>
+                        <li><a href="{{ url_for('.unmute', conf_id=model.id) }}"><span class="glyphicon glyphicon-volume-up"></span> {{ _('Unmute All') }}</a></li>
+                        <li><a href="{{ url_for('.record_start', conf_id=model.id) }}"><span class="glyphicon glyphicon-record"></span> {{ _('Start Recording') }}</a></li>
+                        <li><a href="{{ url_for('.record_stop', conf_id=model.id) }}"><span class="glyphicon glyphicon-stop"></span> {{ _('Stop Recording') }}</a></li>
+                        {% if confbridge[3] == 'locked' %}
+                            <li><a href="{{ url_for('.unlock', conf_id=model.id) }}"><span class='glyphicon glyphicon-lock'></span> {{ _('Unlock') }}</a></li>
+                        {% else %}
+                            <li><a href="{{ url_for('.lock', conf_id=model.id) }}"><span class='glyphicon glyphicon-lock'></span> {{ _('Lock') }}</a></li>
+                        {% endif %}
+                        <li><a href="{{ url_for('.kick', conf_id=model.id) }}"><span class='glyphicon glyphicon-off'></span> {{ _('Kick All') }}</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <br/>
+        <div class="row">
+            <div id="participants" class="container">                
+                {% for p in confbridge_participants %}
+                    <div class="btn-group">
+                        <button id="participant-{{p['callerid']}}"  class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                            {% if 'm' in p['flags'] %} <span class="glyphicon glyphicon-volume-off"></span> {% endif %}
+                            {% if 'A' in p['flags'] %} <span class="glyphicon glyphicon-text-color"></span> {% endif %}
+                            {% if 'M' in p['flags'] %} <span class="glyphicon glyphicon-king"></span> {% endif %}
+                            {{p['callerid']}} 
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                            <li><a href="{{url_for('.kick', conf_id=model.id, channel=p['channel'])}}"><span class="glyphicon glyphicon-remove"></span> {{ _('Kick') }} </a></li>
+                            {% if 'm' in p['flags'] %} 
+                                <li><a href="{{url_for('.unmute', conf_id=model.id, channel=p['channel'])}}"><span class="glyphicon glyphicon-volume-up"></span> {{ _('Unmute') }}</a></li>
+                            {% else %}
+                                <li><a href="{{url_for('.mute', conf_id=model.id, channel=p['channel'])}}"><span class="glyphicon glyphicon-volume-off"></span> {{ _('Mute') }}</a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                {% endfor %}     
+            </div>
+        </div>
+
+    </div>
+
+    <div class="col-md-4">
+        <h3> {{_('Conference Log')}} <small><button><a href="{{url_for('.clear_log', conf_id=model.id)}}">{{ _('Clear Log') }}</a></button></small></h3>
+        <div class='table-responsive'>
+            <small><table id="logsTable" class="table">
+                {% for log in model.logs | sort(attribute='added', reverse=True) %}
+                    <tr style="padding:0;"><td style="white-space:nowrap; padding:0;" title="{{log.added.strftime('%Y-%m-%d %H:%M:%S')}}">{{ log.message }}</td></tr>
+                {% endfor %} 
+            </table></small>
+        </div>
+    </div>
+
+</div>
+
+<br/>
+{% endblock body %}
