@@ -76,8 +76,5 @@ def favicon():
                                'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 
-from views_socketio import mod  as views_socketio
-app.register_blueprint(views_socketio, url_prefix='/socket')
-
 from views_asterisk import asterisk
 app.register_blueprint(asterisk, url_prefix='/asterisk')

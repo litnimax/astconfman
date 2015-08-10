@@ -23,8 +23,6 @@ class Conference(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     number = db.Column(db.String(16), unique=True)
     name = db.Column(db.Unicode(128))
-    #state = db.Column(db.String(16), default='')
-    #invite_on_start = db.Column(db.Boolean)
     is_public = db.Column(db.Boolean)
     conference_profile_id = db.Column(db.Integer,
                                       db.ForeignKey('conference_profile.id'))
@@ -39,7 +37,7 @@ class Conference(db.Model):
 
 
     def _online_participant_count(self):
-        return asterisk.confbridge_get_user_count(self.number)
+        return asterisk.confbridge_get_user_count(self.number) or 0
     online_participant_count = property(_online_participant_count)
 
 

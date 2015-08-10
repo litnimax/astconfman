@@ -89,11 +89,8 @@ def originate(confnum, number, name='', bridge_options=[], user_options=[]):
                     '%s.%s' % (confnum, number)))
         raise OSError
     except OSError:
-        # This happends when no dialplan is defined
-        # and Asterisk immediately deleted call file
-        app.logger.error(
-                        (gettext('Call file error. May be no extension was '
-                                 'matched in [confman-dialout].')))
+        # This happends that Asterisk immediately deleted call file
+        pass
 
 
 def confbridge_get(confno):

@@ -1,7 +1,9 @@
 from flask import Blueprint, request
-from models import Conference, Participant
+from flask.ext.babelex import gettext
+from flask.ext.socketio import SocketIO, emit, join_room
+from models import Conference, Participant, ConferenceLog
 from asterisk import originate, confbridge_list_participants
-from app import app
+from app import app, db, socketio
 
 asterisk = Blueprint('asterisk', __name__)
 
@@ -77,3 +79,65 @@ def user_profile(conf_number, callerid):
         return ','.join(
             conf.public_participant_profile.get_confbridge_options())
 
+
+### Socket IO calls
+@socketio.on('join')
+def join(message):
+    join_room(message['room'])
+
+
+@asterisk.route('/dial_status/<int:conf_number>/<callerid>/<status>')
+def dial_status(conf_number, callerid, status):
+    if not is_authenticated():
+        return 'NOTAUTH'
+    message = gettext('Could not invite number %s: %s' % (callerid, status.capitalize()))
+    conference = Conference.query.filter_by(number=conf_number).first_or_404()
+    log = ConferenceLog(conference_id=conference.id, message=message)
+    db.session.add(log)
+    db.session.commit()
+    socketio.emit('log_message', {'data': message},
+                  room='conference-%s' % conference.id)
+    return 'OK'
+
+
+@asterisk.route('/enter_conference/<int:conf_number>/<callerid>')
+def enter_conference(conf_number, callerid):
+    if not is_authenticated():
+        return 'NOTAUTH'
+    message = gettext('Number %s has entered the conference.' % callerid)
+    conference = Conference.query.filter_by(number=conf_number).first_or_404()
+    log = ConferenceLog(conference_id=conference.id, message=message)
+    db.session.add(log)
+    db.session.commit()
+    socketio.emit('log_message', {'data': message},
+                  room='conference-%s' % conference.id)
+    return 'OK'
+
+@asterisk.route('/leave_conference/<int:conf_number>/<callerid>')
+def leave_conference(conf_number, callerid):
+    if not is_authenticated():
+        return 'NOTAUTH'
+    message = gettext('Number %s has left the conference.' % callerid)
+    conference = Conference.query.filter_by(number=conf_number).first_or_404()
+    log = ConferenceLog(conference_id=conference.id, message=message)
+    db.session.add(log)
+    db.session.commit()
+    socketio.emit('log_message', {'data': message},
+                  room='conference-%s' % conference.id)
+    return 'OK'
+
+
+@asterisk.route('/unmute_request/<int:conf_number>/<callerid>')
+def unmute_request(conf_number, callerid):
+    if not is_authenticated():
+        return 'NOTAUTH'
+    message = gettext('Unmute request from number %s.' % callerid)
+    conference = Conference.query.filter_by(number=conf_number).first_or_404()
+    log = ConferenceLog(conference_id=conference.id, message=message)
+    db.session.add(log)
+    db.session.commit()
+    socketio.emit('log_message', {'data': message},
+                  room='conference-%s' % conference.id)
+    socketio.emit('unmute_request', {'data': callerid},
+                  room='conference-%s' % conference.id)
+    return 'OK'

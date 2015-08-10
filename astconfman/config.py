@@ -32,7 +32,7 @@ Extension: %(confnum)s
 Priority: 1
 MaxRetries: 0
 RetryTime: 15
-WaitTime: 30
+WaitTime: 300
 Set: participant_name=%(name)s
 Set: participant_number=%(number)s
 Set: conf_number=%(confnum)s
