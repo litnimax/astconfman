@@ -6,20 +6,18 @@
     <script type="text/javascript" src="{{url_for('static', filename='js/jquery-2.1.4.min.js')}}"></script>
     <script type="text/javascript" src="{{url_for('static', filename='js/socket.io-0.9.16.min.js')}}"></script>
     <script src="{{url_for('static', filename='js/react-0.13.3.min.js')}}"></script>
+    <script src="{{url_for('static', filename='js/JSXTransformer.js')}}"></script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function(){
             var socket = io.connect('http://' + document.domain + ':' + location.port);
             socket.emit('join', {room: "{{'conference-%s' % model.id}}"});
-            /*
-            socket.on('connect', function() {
-                socket.emit('event', {data: "{{'Connected to Conference ID: %s' % model.id}}"});
-            }); */
-            // event handler for server sent data
-            // the data is displayed in the "Received" section of the page
             socket.on('log_message', function(msg) {
                 var table = document.getElementById("logsTable");
                 var row = table.insertRow(0);
                 row.innerHTML = "<td style='white-space:nowrap; padding:0;'>" + msg.data + "</td>";                
+            });
+            socket.on('update_participants', function(msg) {
+                window.setTimeout(window.participantBox.loadFromServer, 500);
             });
 
             var callerid = '';
@@ -60,12 +58,6 @@
                 setTimeout(blink1, 600);
             });
 
-            // handlers for the different forms in the page
-            // these send data to the server in a variety of ways
-            $('form#disconnect').submit(function(event) {
-                socket.emit('disconnect request');
-                return false;
-            });
         });
     </script>
 
@@ -111,33 +103,104 @@
                         {% endif %}
                         <li><a href="{{ url_for('.kick', conf_id=model.id) }}"><span class='glyphicon glyphicon-off'></span> {{ _('Kick All') }}</a></li>
                     </ul>
-                </div>
-            </div>
+                </div>                
+            </div>            
+
         </div>
         <br/>
-        <div class="row">
-            <div id="participants" class="container">                
-                {% for p in confbridge_participants %}
-                    <div class="btn-group">
-                        <button id="participant-{{p['callerid']}}"  class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                            {% if 'm' in p['flags'] %} <span class="glyphicon glyphicon-volume-off"></span> {% endif %}
-                            {% if 'A' in p['flags'] %} <span class="glyphicon glyphicon-text-color"></span> {% endif %}
-                            {% if 'M' in p['flags'] %} <span class="glyphicon glyphicon-king"></span> {% endif %}
-                            {{p['callerid']}} 
-                            <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-                            <li><a href="{{url_for('.kick', conf_id=model.id, channel=p['channel'])}}"><span class="glyphicon glyphicon-remove"></span> {{ _('Kick') }} </a></li>
-                            {% if 'm' in p['flags'] %} 
-                                <li><a href="{{url_for('.unmute', conf_id=model.id, channel=p['channel'])}}"><span class="glyphicon glyphicon-volume-up"></span> {{ _('Unmute') }}</a></li>
-                            {% else %}
-                                <li><a href="{{url_for('.mute', conf_id=model.id, channel=p['channel'])}}"><span class="glyphicon glyphicon-volume-off"></span> {{ _('Mute') }}</a></li>
-                            {% endif %}
-                        </ul>
-                    </div>
-                {% endfor %}     
-            </div>
+
+        <div id="online_participants" class="row">
         </div>
+
+        <script type="text/jsx">
+
+            var ParticipantList = React.createClass({
+                render: function() {
+                    var participantNodes = this.props.data.map(function (p) {
+                        var mutedBtn;
+                        var unmutedBtn;
+                        var mutedSpan;
+                        var adminSpan;
+                        var markedSpan;
+                        if (p.flags.indexOf('m') != -1) {
+                            mutedBtn = <li><a href={"{{url_for('.unmute', conf_id=model.id, channel='')}}" + p.channel}><span className="glyphicon glyphicon-volume-up"></span> {{ _('Unmute') }}</a></li>
+                            mutedSpan = <span className="glyphicon glyphicon-volume-off"></span>
+                        }
+                        if (p.flags.indexOf('m') == -1) {
+                            unmutedBtn = <li><a href={"{{url_for('.mute', conf_id=model.id, channel='')}}" + p.channel}><span className="glyphicon glyphicon-volume-off"></span> {{ _('Mute') }}</a></li>
+                        }                            
+                        if (p.flags.indexOf('A') != -1) {
+                            adminSpan = <span className="glyphicon glyphicon-text-color"></span>
+                        }                       
+                        if (p.flags.indexOf('M') != -1) {
+                            markedSpan = <span className="glyphicon glyphicon-king"></span>
+                        }                                               
+                        return (
+                            <div className='btn-group'>
+                                <button id={'participant-' + p.callerid} className="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                                {mutedSpan}
+                                {adminSpan}
+                                {markedSpan}
+                                {' ' + p.callerid + ' '} 
+                                <span className="caret"></span>
+                                </button>
+                                <ul className="dropdown-menu" aria-labelledby="dropdownMenu1">
+                                    <li><a href={"{{url_for('.kick', conf_id=model.id , channel='')}}"+p.channel}><span className="glyphicon glyphicon-remove"></span> {{ _('Kick') }} </a></li>
+                                    {mutedBtn} 
+                                    {unmutedBtn}
+                                </ul>                            
+                            </div>
+                        ) 
+                    });                    
+                    return (
+                            <div className="container">
+                                {participantNodes}
+                            </div>
+                        );
+                }
+            });
+
+            var ParticipantBox = React.createClass({
+                
+                loadFromServer: function() {
+                    $.ajax({
+                      url: this.props.url,
+                      dataType: 'json',
+                      cache: false,
+                      success: function(data) {
+                        this.setState({data: data});
+                      }.bind(this),
+                      error: function(xhr, status, err) {
+                        console.error(this.props.url, status, err.toString());
+                      }.bind(this)
+                    });
+                },
+
+                getInitialState: function() {
+                    return {data: []};
+                },
+
+                componentDidMount: function() {
+                    this.loadFromServer();
+                    window.participantBox = this;
+                    //setInterval(this.loadFromServer, this.props.pollInterval);
+                    //$('#refreshParticipants').bind('click', this.loadFromServer);
+                  },                
+
+                render: function() {                    
+                    return (
+                        <div class="participants">
+                            <ParticipantList ref="participantList"  data={this.state.data} />
+                        </div>
+                        );
+                }
+            });
+
+            React.render(
+              <ParticipantBox url="/asterisk/online_participants.json/{{model.number}}" pollInterval={2000} />,
+              document.getElementById('online_participants')
+            );
+        </script>
 
     </div>
 

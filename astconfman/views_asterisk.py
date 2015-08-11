@@ -1,4 +1,5 @@
-from flask import Blueprint, request
+import json
+from flask import Blueprint, request, jsonify, Response
 from flask.ext.babelex import gettext
 from flask.ext.socketio import SocketIO, emit, join_room
 from models import Conference, Participant, ConferenceLog
@@ -111,6 +112,8 @@ def enter_conference(conf_number, callerid):
     db.session.commit()
     socketio.emit('log_message', {'data': message},
                   room='conference-%s' % conference.id)
+    socketio.emit('update_participants', {'data': conf_number},
+                  room='conference-%s' % conference.id)
     return 'OK'
 
 @asterisk.route('/leave_conference/<int:conf_number>/<callerid>')
@@ -123,6 +126,8 @@ def leave_conference(conf_number, callerid):
     db.session.add(log)
     db.session.commit()
     socketio.emit('log_message', {'data': message},
+                  room='conference-%s' % conference.id)
+    socketio.emit('update_participants', {'data': conf_number},
                   room='conference-%s' % conference.id)
     return 'OK'
 
@@ -141,3 +146,10 @@ def unmute_request(conf_number, callerid):
     socketio.emit('unmute_request', {'data': callerid},
                   room='conference-%s' % conference.id)
     return 'OK'
+
+
+@asterisk.route('/online_participants.json/<int:conf_number>')
+def online_participants_json(conf_number):
+    ret = confbridge_list_participants(conf_number)
+    return Response(response=json.dumps(ret),
+                    status=200, mimetype='application/json')
