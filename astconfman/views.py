@@ -137,8 +137,8 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     column_labels = {
         'number': lazy_gettext('Number'),
         'name': lazy_gettext('Name'),
-        'participant_count': lazy_gettext('Partcipants'),
-        'online_participant_count': lazy_gettext('Partcipants Online'),
+        'participant_count': lazy_gettext('Participants'),
+        'online_participant_count': lazy_gettext('Participants Online'),
     }
 
     form_create_rules = form_edit_rules = [
@@ -164,6 +164,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         'number': {'validators': [Required(), is_number]},
         'name': {'validators': [Required()]},
         'conference_profile': {'validators': [Required()]},
+        'public_participant_profile': {'validators': [Required()]},
     }
 
     @expose('/details/')

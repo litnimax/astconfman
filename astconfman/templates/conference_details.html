@@ -17,7 +17,7 @@
                 row.innerHTML = "<td style='white-space:nowrap; padding:0;'>" + msg.data + "</td>";                
             });
             socket.on('update_participants', function(msg) {
-                window.setTimeout(window.participantBox.loadFromServer, 500);
+                window.setTimeout(window.participantBox.loadFromServer, 800);
             });
 
             var callerid = '';
@@ -183,8 +183,6 @@
                 componentDidMount: function() {
                     this.loadFromServer();
                     window.participantBox = this;
-                    //setInterval(this.loadFromServer, this.props.pollInterval);
-                    //$('#refreshParticipants').bind('click', this.loadFromServer);
                   },                
 
                 render: function() {                    
@@ -197,7 +195,7 @@
             });
 
             React.render(
-              <ParticipantBox url="/asterisk/online_participants.json/{{model.number}}" pollInterval={2000} />,
+              <ParticipantBox url="/asterisk/online_participants.json/{{model.number}}" />,
               document.getElementById('online_participants')
             );
         </script>
