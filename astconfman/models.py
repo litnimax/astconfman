@@ -33,7 +33,7 @@ class Conference(db.Model):
     public_participant_profile = db.relationship('ParticipantProfile')
 
     def __unicode__(self):
-        return '%s <%s>' % (self.number, self.name)
+        return '%s <%s>' % (self.name, self.number)
 
 
     def _online_participant_count(self):

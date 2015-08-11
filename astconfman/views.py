@@ -160,11 +160,19 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         'legend': lambda v,c,m,n: legend_formatter(v,c,m,n),
     }
 
+    column_descriptions = {
+        'participants': lazy_gettext('Use <a href="/participant/">Participants</a> menu to manage participant list'),
+    }
+
     form_args = {
         'number': {'validators': [Required(), is_number]},
         'name': {'validators': [Required()]},
         'conference_profile': {'validators': [Required()]},
         'public_participant_profile': {'validators': [Required()]},
+    }
+
+    form_widget_args = {
+        'participants': {'disabled': True},
     }
 
     @expose('/details/')
