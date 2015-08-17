@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-08-11 16:22+0300\n"
+"POT-Creation-Date: 2015-08-17 13:50+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,6 +16,24 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 0.9.6\n"
+
+#: forms.py:11
+msgid "File"
+msgstr ""
+
+#: forms.py:20
+#, python-format
+msgid "CSV file is broken, line %(linenum)s"
+msgstr ""
+
+#: forms.py:24
+#, python-format
+msgid "The first column does not contain phone number, line %(linenum)s"
+msgstr ""
+
+#: forms.py:34
+msgid "You must select a Public Participant Profile for a Public Conference."
+msgstr ""
 
 #: manage.py:20
 msgid "John Smith"
@@ -45,135 +63,154 @@ msgstr ""
 msgid "Test Conference"
 msgstr ""
 
-#: views.py:32
+#: views.py:33
 msgid ""
 "Could not verify your access level for that URL.\n"
 "You have to login with proper credentials"
 msgstr ""
 
-#: views.py:68
+#: views.py:51
+msgid "Must be a number!"
+msgstr ""
+
+#: views.py:69
 msgid "Admin"
 msgstr ""
 
-#: views.py:70
+#: views.py:71
 msgid "Marked"
 msgstr ""
 
-#: views.py:72 views.py:74
+#: views.py:73 views.py:75
 msgid "PIN is set"
 msgstr ""
 
-#: views.py:76
+#: views.py:77
 msgid "Wait for marked user to join"
 msgstr ""
 
-#: views.py:79
+#: views.py:80
 msgid "End when marked user leaves"
 msgstr ""
 
-#: views.py:84
+#: views.py:85
 msgid "Guests (not from participant list) can join"
 msgstr ""
 
-#: views.py:87
+#: views.py:88
 msgid "Only for participants specified"
 msgstr ""
 
-#: views.py:121
+#: views.py:103
+msgid "Add to Conference"
+msgstr ""
+
+#: views.py:128
+#, python-format
+msgid "Imported %(num)s contacts."
+msgstr ""
+
+#: views.py:150
 msgid "Phone"
 msgstr ""
 
-#: views.py:122 views.py:139
+#: views.py:151 views.py:168
 msgid "Name"
 msgstr ""
 
-#: views.py:138
+#: views.py:167
 msgid "Number"
 msgstr ""
 
-#: views.py:140 views.py:155 views.py:512 templates/admin/index.html:18
+#: views.py:169 views.py:184 views.py:545 templates/admin/index.html:18
 msgid "Participants"
 msgstr ""
 
-#: views.py:141
+#: views.py:170
 msgid "Participants Online"
 msgstr ""
 
-#: views.py:147
+#: views.py:176
 msgid "Basic Settings"
 msgstr ""
 
-#: views.py:151
+#: views.py:180
 msgid "Open Access"
 msgstr ""
 
-#: views.py:188
+#: views.py:193
+msgid ""
+"Use <a href=\"/participant/\">Participants</a> menu to manage participant"
+" list"
+msgstr ""
+
+#: views.py:225
 msgid "You must select Conference and Profile"
 msgstr ""
 
-#: views.py:203
+#: views.py:240
 #, python-format
 msgid "%(contact)s is already there."
 msgstr ""
 
-#: views.py:208
+#: views.py:245
 #, python-format
 msgid "%(contact)s added."
 msgstr ""
 
-#: views.py:225
+#: views.py:262
 #, python-format
 msgid "Number %(phone)s is called for conference."
 msgstr ""
 
-#: views.py:243
+#: views.py:280
 msgid "All the participants where invited to the conference"
 msgstr ""
 
-#: views.py:256
+#: views.py:293
 #, python-format
 msgid "Channel %(channel)s is kicked."
 msgstr ""
 
-#: views.py:259
+#: views.py:296
 msgid "All participants have been kicked from the conference."
 msgstr ""
 
-#: views.py:271
+#: views.py:308
 #, python-format
 msgid "Participant %(channel)s muted."
 msgstr ""
 
-#: views.py:278
+#: views.py:315
 msgid "Conference muted."
 msgstr ""
 
-#: views.py:292
+#: views.py:329
 #, python-format
 msgid "Participant %(channel)s unmuted."
 msgstr ""
 
-#: views.py:297
+#: views.py:334
 msgid "Conference unmuted."
 msgstr ""
 
-#: views.py:307
+#: views.py:344
 msgid "The conference recording has been started."
 msgstr ""
 
-#: views.py:315
+#: views.py:352
 msgid "The conference recording has been stopped."
 msgstr ""
 
-#: views.py:323
+#: views.py:360
 msgid "The conference has been locked."
 msgstr ""
 
-#: views.py:332
+#: views.py:369
 msgid "The conference has been unlocked."
 msgstr ""
 
-#: views.py:379
+#: views.py:412
 msgid ""
 "Limits the number of participants for a single conference to a specific "
 "number. By default, conferences have no participant limit. After the "
@@ -182,7 +219,7 @@ msgid ""
 "join otherwise-locked, because of limit, conferences."
 msgstr ""
 
-#: views.py:380
+#: views.py:413
 msgid ""
 "Records the conference call starting when the first user enters the room,"
 " and ending when the last user exits the room. The default recorded "
@@ -192,7 +229,7 @@ msgid ""
 "directory as set in asterisk.conf"
 msgstr ""
 
-#: views.py:381
+#: views.py:414
 msgid ""
 "Sets the internal native sample rate at which to mix the conference. The "
 "\"auto\" option allows Asterisk to adjust the sample rate to the best "
@@ -202,7 +239,7 @@ msgid ""
 "sampling rate will be used instead."
 msgstr ""
 
-#: views.py:382
+#: views.py:415
 msgid ""
 "Sets, in milliseconds, the internal mixing interval. By default, the "
 "mixing interval of a bridge is 20ms. This setting reflects how \"tight\" "
@@ -212,7 +249,7 @@ msgid ""
 "more delay in the bridge and consume less resources"
 msgstr ""
 
-#: views.py:383
+#: views.py:416
 msgid ""
 "Configured video (as opposed to audio) distribution method for conference"
 " participants. Participants must use the same video codec. Confbridge "
@@ -234,78 +271,78 @@ msgid ""
 "the video stream. Jitterbuffer should be disabled when video is used."
 msgstr ""
 
-#: views.py:428
+#: views.py:461
 msgid "Basic"
 msgstr ""
 
-#: views.py:437
+#: views.py:470
 msgid "Announcements"
 msgstr ""
 
-#: views.py:449
+#: views.py:482
 msgid "Voice Processing"
 msgstr ""
 
-#: views.py:454
+#: views.py:487
 msgid "Sets if the user is an Admin or not. By default, no."
 msgstr ""
 
-#: views.py:455
+#: views.py:488
 msgid "Sets if the user is Marked or not. By default, no."
 msgstr ""
 
-#: views.py:456 views.py:458
+#: views.py:489 views.py:491
 msgid "Sets if the user should start out muted. By default, no."
 msgstr ""
 
-#: views.py:457
+#: views.py:490
 msgid ""
 "Sets if the user must enter a PIN before joining the conference. The user"
 " will be prompted for the PIN."
 msgstr ""
 
-#: views.py:459
+#: views.py:492
 msgid ""
 "When set, enter/leave prompts and user introductions are not played. By "
 "default, no."
 msgstr ""
 
-#: views.py:460
+#: views.py:493
 msgid ""
 "Sets if the user must wait for another marked user to enter before "
 "joining the conference. By default, no."
 msgstr ""
 
-#: views.py:461
+#: views.py:494
 msgid ""
 "If enabled, every user with this option in their profile will be removed "
 "from the conference when the last marked user exists the conference."
 msgstr ""
 
-#: views.py:462
+#: views.py:495
 msgid ""
 "Whether or not DTMF received from users should pass through the "
 "conference to other users. By default, no."
 msgstr ""
 
-#: views.py:463
+#: views.py:496
 msgid ""
 "Sets whether music on hold should be played when only one person is in "
 "the conference or when the user is waiting on a marked user to enter the "
 "conference. By default, off."
 msgstr ""
 
-#: views.py:464
+#: views.py:497
 msgid "Sets the music on hold class to use for music on hold."
 msgstr ""
 
-#: views.py:465
+#: views.py:498
 msgid ""
 "Sets if the number of users in the conference should be announced to the "
 "caller. By default, no."
 msgstr ""
 
-#: views.py:466
+#: views.py:499
 msgid ""
 "Choices: yes, no, integer. Sets if the number of users should be "
 "announced to all other users in the conference when someone joins. When "
@@ -313,26 +350,26 @@ msgid ""
 "above the specified number"
 msgstr ""
 
-#: views.py:467
+#: views.py:500
 msgid ""
 "Sets if the only user announcement should be played when someone enters "
 "an empty conference. By default, yes."
 msgstr ""
 
-#: views.py:468
+#: views.py:501
 msgid ""
 "If set, the sound file specified by filename will be played to the user, "
 "and only the user, upon joining the conference bridge."
 msgstr ""
 
-#: views.py:469
+#: views.py:502
 msgid ""
 "When enabled, this option prompts the user for their name when entering "
 "the conference. After the name is recorded, it will be played as the user"
 " enters and exists the conference. By default, no."
 msgstr ""
 
-#: views.py:470
+#: views.py:503
 msgid ""
 "Drops what Asterisk detects as silence from entering into the bridge. "
 "Enabling this option will drastically improve performance and help remove"
@@ -341,7 +378,7 @@ msgid ""
 "improvements."
 msgstr ""
 
-#: views.py:471
+#: views.py:504
 msgid ""
 "The time, in milliseconds, by default 160, of sound above what the DSP "
 "has established as base-line silence for a user, before that user is "
@@ -360,7 +397,7 @@ msgid ""
 "off as they transition from silence to talking."
 msgstr ""
 
-#: views.py:475
+#: views.py:508
 msgid ""
 "The time, in milliseconds, by default 2500, of sound falling within what "
 "the DSP has established as the baseline silence, before a user is "
@@ -378,13 +415,13 @@ msgid ""
 "sound choppy to other participants."
 msgstr ""
 
-#: views.py:478
+#: views.py:511
 msgid ""
 "Sets whether or not notifications of when a user begins and ends talking "
 "should be sent out as events over AMI. By default, no."
 msgstr ""
 
-#: views.py:479
+#: views.py:512
 msgid ""
 "Whether or not a noise reduction filter should be applied to the audio "
 "before mixing. By default, off. This requires codec_speex to be built and"
@@ -395,7 +432,7 @@ msgid ""
 "the cost of a slight performance hit."
 msgstr ""
 
-#: views.py:480
+#: views.py:513
 msgid ""
 "Whether or not to place a jitter buffer on the caller's audio stream "
 "before any audio mixing is performed. This option is highly recommended, "
@@ -406,27 +443,27 @@ msgid ""
 " the calling channel, before it enters the ConfBridge application."
 msgstr ""
 
-#: views.py:502 templates/admin/index.html:17
+#: views.py:535 templates/admin/index.html:17
 msgid "Conferences"
 msgstr ""
 
-#: views.py:521 templates/admin/index.html:19
+#: views.py:554 templates/admin/index.html:19
 msgid "Contacts"
 msgstr ""
 
-#: views.py:531 templates/admin/index.html:20
+#: views.py:564 templates/admin/index.html:20
 msgid "Recordings"
 msgstr ""
 
-#: views.py:540 views.py:552
+#: views.py:573 views.py:585
 msgid "Profiles"
 msgstr ""
 
-#: views.py:543
+#: views.py:576
 msgid "Participant"
 msgstr ""
 
-#: views.py:555
+#: views.py:588
 msgid "Conference"
 msgstr ""
 
@@ -516,6 +553,18 @@ msgstr ""
 
 #: templates/conference_details.html:206
 msgid "Clear Log"
+msgstr ""
+
+#: templates/contact_create.html:5
+msgid "You can also"
+msgstr ""
+
+#: templates/contact_create.html:5
+msgid "Import Contacts"
+msgstr ""
+
+#: templates/contact_import.html:5
+msgid "Import Contacts from a CSV file (phone, name):"
 msgstr ""
 
 #: templates/admin/index.html:30

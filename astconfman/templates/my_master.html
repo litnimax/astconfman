@@ -1,0 +1,22 @@
+{% extends 'admin/base.html' %}
+
+{% block head_css %}
+{{ super() }}
+ <link href="{{url_for('static', filename='lang/languages.min.css')}}" rel="stylesheet">
+{% endblock %}
+
+{% block access_control %}
+
+<div class="navbar-text pull-right">   
+    <div class="dropdown"> 
+    <a href="#" class="navbar-link dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+        <i class="glyphicon glyphicon-globe"></i> {{_('Language')}}
+        <span class="caret"></span></a>
+        <ul class="dropdown-menu" role="menu">
+            <li><a href="?lang=en"><span class="lang-sm lang-lbl" lang="en"></span></a></li>
+            <li><a href="?lang=ru"><span class="lang-sm lang-lbl" lang="ru"></span></a></li>
+        </ul>    
+    </div>
+</div>
+
+{% endblock %}

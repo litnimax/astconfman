@@ -18,7 +18,7 @@ import asterisk
 
 
 # Authentication
-auth = HTTPDigestAuth()
+#auth = HTTPDigestAuth()
 
 def check_auth(username, password):
     if username in app.config['ADMINS'].keys() and \
@@ -196,7 +196,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     form_args = {
         'number': {'validators': [Required(), is_number]},
         'name': {'validators': [Required()]},
-        'conference_profile': {'validators': [Required()]},    
+        'conference_profile': {'validators': [Required()]} ,   
     }
 
     form_widget_args = {
@@ -388,19 +388,6 @@ class RecordingAdmin(FileAdmin, AuthBaseView):
     can_rename = True
     can_mkdir = False
 
-    #@expose('/update/')
-    #def update_recording_list(self):
-    #    for filename in os.listdir(ASTERISK_MONITOR_DIR):
-    #        print filename
-    #        if not Recording.query.filter_by(filename=filename).first():
-    #            rec = Recording()
-    #            rec.create_date = datetime.now()
-    #            rec.filename = filename
-    #            rec.room = '101'
-    #            db.session.add(rec)
-    #            db.session.commit()
-    #    return redirect('recording')
-
 
 class ConferenceProfileAdmin(ModelView, AuthBaseView):
     column_list = [
@@ -515,13 +502,23 @@ The drop_silence option depends on this value to determine when the user's audio
     }
 
 
+class MyAdminIndexView(AdminIndexView):
+    def is_accessible(self):
+        return is_authenticated()
+
+    def _handle_view(self, name, *args, **kwargs):
+        if not self.is_accessible():
+            return authenticate()
+
+
 admin = Admin(
     app,
     name='PBXWare Conf Manager',
-    index_view=AdminIndexView(        
+    index_view=MyAdminIndexView(        
         template='admin/index.html',
         url='/'
     ),
+    base_template='my_master.html',
     template_mode='bootstrap3',
     category_icon_classes={
         'Profiles': 'glyphicon glyphicon-wrench',

@@ -1,26 +1,5 @@
 {% extends 'admin/master.html' %}
  
-{% block head_css %}
-{{ super() }}
- <link href="{{url_for('static', filename='lang/languages.min.css')}}" rel="stylesheet">
-{% endblock %}
-
-{% block access_control %}
-<div class='pull-right'>
-    <a href="?lang=en"><span class="lang-sm lang-lbl" lang="en"></span></a>
-    <a href="?lang=ru"><span class="lang-sm lang-lbl" lang="ru"></span></a>
-</div>
-{% endblock %}
-
-{% block menu_links %}
-<ul class="nav navbar-nav">
-    <li><a href="{{ url_for('conference.index_view') }}"><span class="glyphicon glyphicon-bullhorn"></span>  {{_('Conferences')}}</a></li> 
-    <li><a href="{{ url_for('participant.index_view') }}"><span class="glyphicon glyphicon-user"></span>  {{_('Participants')}}</a></li> 
-    <li><a href="{{ url_for('contact.index_view') }}"><span class="glyphicon glyphicon-book"></span>  {{_('Contacts')}}</a></li> 
-    <li><a href="{{ url_for('recording.index') }}"><span class="glyphicon glyphicon-hdd"></span>  {{_('Recordings')}}</a></li> 
-</ul>
-{% endblock menu_links %}
-
 {% block body %}
 <div class="row">
     <div class="well well-sm"><img class="img-responsive" src="/static/pbxware.png"/></div>
