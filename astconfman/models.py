@@ -41,6 +41,10 @@ class Conference(db.Model):
     online_participant_count = property(_online_participant_count)
 
 
+    def _invited_participant_count(self):
+        return Participant.query.filter_by(conference=self, is_invited=True).count()
+    invited_participant_count = property(_invited_participant_count)
+
     def _participant_count(self):
         return len(self.participants)
     participant_count = property(_participant_count)
@@ -72,6 +76,7 @@ class Participant(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     phone = db.Column(db.String(32), index=True)
     name = db.Column(db.Unicode(128))
+    is_invited = db.Column(db.Boolean, default=True)
     conference_id = db.Column(db.Integer, db.ForeignKey('conference.id'))
     conference = db.relationship('Conference', backref='participants')
     profile_id = db.Column(db.Integer, db.ForeignKey('participant_profile.id'))

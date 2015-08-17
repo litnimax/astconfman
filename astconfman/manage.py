@@ -2,13 +2,14 @@
 
 from flask import Flask
 from flask.ext.script import Manager
+from flask.ext.migrate import MigrateCommand
 from flask.ext.babelex import gettext
-from app import app, db
+from app import app, db, migrate
 from models import Contact, Conference, Participant
 from models import ParticipantProfile, ConferenceProfile
 
-
 manager = Manager(app)
+manager.add_command('db', MigrateCommand)
 
 
 @manager.command

@@ -136,7 +136,7 @@ class ParticipantAdmin(ModelView, AuthBaseView):
     column_formatters = {
         'legend': lambda v,c,m,n: legend_formatter(v,c,m,n)
     }
-    column_list = ['phone', 'name', 'conference', 'profile']
+    column_list = ['phone', 'name', 'is_invited', 'conference', 'profile']
     form_args = {
         'phone': dict(validators=[Required(),is_number]),
         'conference': dict(validators=[Required()]),
@@ -145,6 +145,9 @@ class ParticipantAdmin(ModelView, AuthBaseView):
     column_labels = {
         'phone': lazy_gettext('Phone'),
         'name': lazy_gettext('Name'),
+        'conference': lazy_gettext('Conference'),
+        'profile': lazy_gettext('Participant Profile'),
+        'is_invited': lazy_gettext('Is invited on Invite All?')
     }
 
 
@@ -157,12 +160,14 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     can_view_details = True
 
     column_list = ['number', 'name', 'is_public', 'is_locked',
-                   'participant_count', 'online_participant_count']
+                   'participant_count', 'invited_participant_count',
+                   'online_participant_count']
     column_filters = ['is_public']
     column_labels = {
         'number': lazy_gettext('Number'),
         'name': lazy_gettext('Name'),
         'participant_count': lazy_gettext('Participants'),
+        'invited_participant_count': lazy_gettext('Invited Participants'),
         'online_participant_count': lazy_gettext('Participants Online'),
     }
 
@@ -266,7 +271,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         conf = Conference.query.get_or_404(conf_id)
         online_participants = [
             k['callerid'] for k in asterisk.confbridge_list_participants(conf.number)]
-        gen = (p for p in conf.participants if p.phone not in online_participants)
+        gen = (p for p in conf.participants if p.is_invited and p.phone not in online_participants)
         for p in gen:
                 asterisk.originate(conf.number, p.phone, name=p.name,
             bridge_options=conf.conference_profile.get_confbridge_options(),

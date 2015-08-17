@@ -6,6 +6,7 @@ Flask-SQLAlchemy
 Flask-WTF
 Flask-Script
 Flask-SocketIO
+Flask-Migrate
 Jinja2
 MarkupSafe
 SQLAlchemy

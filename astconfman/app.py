@@ -7,6 +7,7 @@ from flask.ext.babelex import Babel, gettext, lazy_gettext
 from flask.ext.socketio import SocketIO, emit
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.admin import Admin, AdminIndexView
+from flask.ext.migrate import Migrate
 from gevent import monkey
 monkey.patch_all()
 
@@ -22,6 +23,8 @@ except IOError:
 db = SQLAlchemy()
 #db.app = app
 db.init_app(app)
+
+migrate = Migrate(app, db)
 
 from models import Contact, Conference, Participant, ParticipantProfile, ConferenceProfile
 from views import ContactAdmin, ConferenceAdmin, ParticipantAdmin, RecordingAdmin
