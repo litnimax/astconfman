@@ -7,18 +7,14 @@ from flask.ext.admin.contrib.sqla import ModelView, filters
 from flask.ext.admin.contrib.fileadmin import FileAdmin
 from flask.ext.admin.form import rules
 from flask.ext.babelex import gettext, lazy_gettext
-from flask.ext.httpauth import HTTPDigestAuth
 from jinja2 import Markup
 from wtforms.validators import Required, ValidationError
 from models import Contact, Conference, ConferenceLog, Participant
 from models import ConferenceProfile, ParticipantProfile
-from app import  app, db
+from app import app, db
 from forms import ContactImportForm, ConferenceForm
 import asterisk
 
-
-# Authentication
-#auth = HTTPDigestAuth()
 
 def check_auth(username, password):
     if username in app.config['ADMINS'].keys() and \

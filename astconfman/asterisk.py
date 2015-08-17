@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 from flask.ext.babelex import gettext
+from transliterate import translit
 from app import app
 
 
@@ -68,8 +69,10 @@ def confbridge_list_participants(confno):
 
 def originate(confnum, number, name='', bridge_options=[], user_options=[]):
     tempname = tempfile.mktemp()
-    f = open(tempname, 'w')
-    f.write(app.config['CALLOUT_TEMPLATE'] % {'number': number, 'name': name,
+    f = open(tempname, mode='w')
+    f.write(app.config['CALLOUT_TEMPLATE'] % {'number': number,
+                                              'name': translit(name, 'ru',
+                                                               reversed=True),
                                               'confnum': confnum})
     f.write('\n')
     # Now iterate over profile options

@@ -2,7 +2,6 @@ Babel
 Flask
 https://github.com/flask-admin/flask-admin/archive/master.zip
 Flask-BabelEx
-Flask-HTTPAuth
 Flask-SQLAlchemy
 Flask-WTF
 Flask-Script
@@ -16,6 +15,7 @@ gevent
 gevent-socketio
 gevent-websocket
 greenlet
+transliterate
 itsdangerous
 pytz
 speaklater
