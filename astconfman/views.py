@@ -13,6 +13,7 @@ from wtforms.validators import Required, ValidationError
 from models import Contact, Conference, ConferenceLog, Participant
 from models import ConferenceProfile, ParticipantProfile
 from app import  app, db
+from forms import ContactImportForm
 import asterisk
 
 
@@ -47,7 +48,7 @@ def is_authenticated():
 
 def is_number(form, field):
         if field.data and not field.data.isdigit():
-            raise ValidationError('Must be a number!')
+            raise ValidationError(lazy_gettext('Must be a number!'))
 
 
 class AuthBaseView(BaseView):
@@ -93,16 +94,44 @@ def legend_formatter(view, context, model, name):
 class ContactAdmin(ModelView, AuthBaseView):
     column_list = ['phone', 'name']
     form_columns = ['phone', 'name']
+    create_template = 'contact_create.html'
     column_searchable_list = ['phone', 'name']
     form_args = {
         'phone': dict(validators=[Required(), is_number])
     }
 
-    @action('conference', 'Add to Conference')
+    @action('conference', gettext('Add to Conference'))
     def action_conference(self, ids):
         return render_template('action_conference.html', ids=ids,
                                conferences=Conference.query.all(),
                                profiles=ParticipantProfile.query.all())
+
+    @expose('/import', methods=['POST', 'GET'])
+    def import_contacts(self):
+        form = ContactImportForm()
+        if request.method == 'GET':
+            return self.render('contact_import.html', form=form)
+
+        else:
+            form = ContactImportForm()
+            if form.validate_on_submit():
+                data = form.filename.data.readlines()
+                imported = 0
+                for line in data:
+                    line = line.split(',')
+                    c = Contact()
+                    c.phone = line[0]
+                    c.name = line[1].decode('utf-8')
+                    db.session.add(c)
+                    imported += 1
+                db.session.commit()
+                flash(gettext('Imported %(num)s contacts.', num=imported))
+                return redirect(url_for('.index_view'))
+
+            else:
+                return self.render('contact_import.html', form=form)
+
+
 
 
 class ParticipantAdmin(ModelView, AuthBaseView):

@@ -1,0 +1,8 @@
+{% extends "admin/master.html" %}
+{% import "admin/lib.html" as lib with context %}
+
+{% block body %}
+<h3>{{_('Import Contacts from a CSV file (phone, name):')}}</h3>
+{{ lib.render_form(form, dir_url) }}
+{{ error }}
+{% endblock %}

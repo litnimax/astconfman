@@ -13,6 +13,7 @@ SQLALCHEMY_ECHO = False
 DATABASE_FILE = os.path.join(os.path.dirname(__file__), 'astconfman.db')
 SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DATABASE_FILE
 SECRET_KEY = 'change_me_here_to_random_key'
+WTF_CSRF_ENABLED = True
 LANGUAGE = 'ru'
 
 LOG_ENABLED = True
