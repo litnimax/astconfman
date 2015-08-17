@@ -13,7 +13,7 @@ from wtforms.validators import Required, ValidationError
 from models import Contact, Conference, ConferenceLog, Participant
 from models import ConferenceProfile, ParticipantProfile
 from app import  app, db
-from forms import ContactImportForm
+from forms import ContactImportForm, ConferenceForm
 import asterisk
 
 
@@ -156,7 +156,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     """
     This is active conference started in a room.
     """
-    #list_template = 'conference_list.html'
+    form_base_class = ConferenceForm
     details_template = 'conference_details.html'
     can_view_details = True
 
@@ -196,13 +196,13 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     form_args = {
         'number': {'validators': [Required(), is_number]},
         'name': {'validators': [Required()]},
-        'conference_profile': {'validators': [Required()]},
-        'public_participant_profile': {'validators': [Required()]},
+        'conference_profile': {'validators': [Required()]},    
     }
 
     form_widget_args = {
         'participants': {'disabled': True},
     }
+
 
     @expose('/details/')
     def details_view(self):
@@ -381,16 +381,12 @@ class ConferenceAdmin(ModelView, AuthBaseView):
 
 
 class RecordingAdmin(FileAdmin, AuthBaseView):
-    #can_create = False
-    #can_edit = False
-    #list_template = 'recording_list.html'
-    #column_filters = ['room', 'create_date']
-    #column_default_sort = 'create_date'
     can_upload = False
     can_download = True
     can_delete = True
     can_mkdir = False
     can_rename = True
+    can_mkdir = False
 
     #@expose('/update/')
     #def update_recording_list(self):
