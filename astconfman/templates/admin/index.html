@@ -1,11 +1,13 @@
 {% extends 'admin/master.html' %}
  
 {% block body %}
-<div class="row">
-    <div class="well well-sm"><img class="img-responsive" src="/static/pbxware.png"/></div>
-</div>
+{% if config['BRAND_LOGO'] %}
+    <div class="row">
+        <div class="well well-sm"><img class="img-responsive" src="{{ config['BRAND_LOGO']}}"/></div>
+    </div>
+{% endif %}
 <hr/>
 <div class="row">
-    <footer> {{ _("(C) 2015 Asterisk Guru | www.asteriskguru.ru | +7(495)2323956 | Professional Asterisk support & development services ") }} </footer>
+        <footer class="text-center"> {{ config['BRAND_FOOTER'] | safe }} </footer>
 </div>
 {% endblock %}

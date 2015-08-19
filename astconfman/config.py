@@ -1,4 +1,9 @@
+# *-* encoding: utf-8 *-*
 import os
+from flask.ext.babelex import lazy_gettext as _
+
+BRAND_FOOTER = _(u"""(C) 2015 Asterisk Guru | <a href="http://asteriskguru.ru/">www.asteriskguru.ru</a> | Professional Asterisk support & development services.""")
+BRAND_LOGO = 'static/pbxware_logo.png'
 
 ADMINS = {
     'admin': dict(password='test', email='litnimax@pbxware.ru'),
@@ -15,6 +20,7 @@ SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DATABASE_FILE
 SECRET_KEY = 'change_me_here_to_random_key'
 WTF_CSRF_ENABLED = True
 LANGUAGE = 'ru'
+LANGUAGES = ['ru_RU', 'ru']
 
 LOG_ENABLED = True
 LOG_FILE = os.path.join(os.path.dirname(__name__), 'astconfman.log')

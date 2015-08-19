@@ -6,7 +6,7 @@ from flask.ext.admin.actions import action
 from flask.ext.admin.contrib.sqla import ModelView, filters
 from flask.ext.admin.contrib.fileadmin import FileAdmin
 from flask.ext.admin.form import rules
-from flask.ext.babelex import gettext, lazy_gettext
+from flask.ext.babelex import lazy_gettext as _, gettext
 from jinja2 import Markup
 from wtforms.validators import Required, ValidationError
 from models import Contact, Conference, ConferenceLog, Participant
@@ -26,7 +26,7 @@ def check_auth(username, password):
 
 def authenticate():
     return Response(
-            gettext(
+            _(
                 'Could not verify your access level for that URL.\n'
                 'You have to login with proper credentials'
             ),
@@ -44,7 +44,7 @@ def is_authenticated():
 
 def is_number(form, field):
         if field.data and not field.data.isdigit():
-            raise ValidationError(lazy_gettext('Must be a number!'))
+            raise ValidationError(_('Must be a number!'))
 
 
 class AuthBaseView(BaseView):
@@ -95,8 +95,12 @@ class ContactAdmin(ModelView, AuthBaseView):
     form_args = {
         'phone': dict(validators=[Required(), is_number])
     }
+    column_labels = {
+        'phone': _('Phone'),
+        'name': _('Name'),
+    }
 
-    @action('conference', gettext('Add to Conference'))
+    @action('conference', _('Add to Conference'))
     def action_conference(self, ids):
         return render_template('action_conference.html', ids=ids,
                                conferences=Conference.query.all(),
@@ -143,11 +147,14 @@ class ParticipantAdmin(ModelView, AuthBaseView):
         'profile': dict(validators=[Required()]),
     }
     column_labels = {
-        'phone': lazy_gettext('Phone'),
-        'name': lazy_gettext('Name'),
-        'conference': lazy_gettext('Conference'),
-        'profile': lazy_gettext('Participant Profile'),
-        'is_invited': lazy_gettext('Is invited on Invite All?')
+        'phone': _('Phone'),
+        'name': _('Name'),
+        'conference': _('Conference'),
+        'profile': _('Participant Profile'),
+        'is_invited': _('Is invited on Invite All?')
+    }
+    column_descriptions = {
+        'is_invited': _('When enabled this participant will be called on <i>Invite All</i> from <i>Manage Conference</i> menu.'),
     }
 
 
@@ -162,27 +169,32 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     column_list = ['number', 'name', 'is_public', 'is_locked',
                    'participant_count', 'invited_participant_count',
                    'online_participant_count']
-    column_filters = ['is_public']
+    #column_filters = ['is_public']
     column_labels = {
-        'number': lazy_gettext('Number'),
-        'name': lazy_gettext('Name'),
-        'participant_count': lazy_gettext('Participants'),
-        'invited_participant_count': lazy_gettext('Invited Participants'),
-        'online_participant_count': lazy_gettext('Participants Online'),
+        'number': _('Number'),
+        'name': _('Name'),
+        'participant_count': _('Participants'),
+        'invited_participant_count': _('Invited Participants'),
+        'online_participant_count': _('Participants Online'),
+        'is_locked': _('Locked'),
+        'is_public': _('Public'),
+        'conference_profile': _('Conference Profile'),
+        'public_participant_profile': _('Public Participant Profile'),
+        'participants': _('Participants'),
     }
 
     form_create_rules = form_edit_rules = [
         rules.FieldSet(
             ('number', 'name', 'conference_profile'),
-            gettext('Basic Settings')
+            _('Basic Settings')
         ),
         rules.FieldSet(
             ('is_public', 'public_participant_profile'),
-            gettext('Open Access')
+            _('Open Access')
         ),
         rules.FieldSet(
             ('participants',),
-            gettext('Participants')
+            _('Participants')
         ),
     ]
 
@@ -191,7 +203,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     }
 
     column_descriptions = {
-        'participants': lazy_gettext('Use <a href="/participant/">Participants</a> menu to manage participant list'),
+        'participants': _(u'Use <a href="/participant/">Participants</a> menu to manage participant list'),
     }
 
     form_args = {
@@ -223,7 +235,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
             if not request.form.get('conference') or not request.form.get(
                 'profile'):
                     flash(
-                        gettext('You must select Conference and Profile'))
+                        _('You must select Conference and Profile'))
                     return redirect(url_for('contact.index_view'))
 
             conference = Conference.query.filter_by(
@@ -306,14 +318,14 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         conf = Conference.query.get_or_404(conf_id)
         if channel:
             asterisk.confbridge_mute(conf.number, channel)
-            msg = gettext('Participant %(channel)s muted.', channel=channel)
+            msg = _('Participant %(channel)s muted.', channel=channel)
             flash(msg)
             #conf.log(msg)
         else:
             # Mute all
             for p in asterisk.confbridge_list_participants(conf.number):
                 asterisk.confbridge_mute(conf.number, p['channel'])
-            msg = gettext('Conference muted.')
+            msg = _('Conference muted.')
             flash(msg)
             conf.log(msg)
 
@@ -395,13 +407,15 @@ class ConferenceProfileAdmin(ModelView, AuthBaseView):
         'name', 'max_members', 'record_conference',
         'internal_sample_rate', 'mixing_interval', 'video_mode'
     ]
-
+    column_labels = {
+        'name': _('Profile Name'),
+    }
     column_descriptions = {
-        'max_members': gettext("""Limits the number of participants for a single conference to a specific number. By default, conferences have no participant limit. After the limit is reached, the conference will be locked until someone leaves. Admin-level users are exempt from this limit and will still be able to join otherwise-locked, because of limit, conferences."""),
-        'record_conference': gettext("""Records the conference call starting when the first user enters the room, and ending when the last user exits the room. The default recorded filename is 'confbridge-<name of conference bridge>-<start time>.wav' and the default format is 8kHz signed linear. By default, this option is disabled. This file will be located in the configured monitoring directory as set in asterisk.conf"""),
-        'internal_sample_rate': gettext("""Sets the internal native sample rate at which to mix the conference. The "auto" option allows Asterisk to adjust the sample rate to the best quality / performance based on the participant makeup. Numbered values lock the rate to the specified numerical rate. If a defined number does not match an internal sampling rate supported by Asterisk, the nearest sampling rate will be used instead."""),
-        'mixing_interval': gettext("""Sets, in milliseconds, the internal mixing interval. By default, the mixing interval of a bridge is 20ms. This setting reflects how "tight" or "loose" the mixing will be for the conference. Lower intervals provide a "tighter" sound with less delay in the bridge and consume more system resources. Higher intervals provide a "looser" sound with more delay in the bridge and consume less resources"""),
-        'video_mode': gettext("""Configured video (as opposed to audio) distribution method for conference participants. Participants must use the same video codec. Confbridge does not provide MCU functionality. It does not transcode, scale, transrate, or otherwise manipulate the video. Options are "none," where no video source is set by default and a video source may be later set via AMI or DTMF actions; "follow_talker," where video distrubtion follows whomever is talking and providing video; "last_marked," where the last marked user with video capabilities to join the conference will be the single video source distributed to all other participants - when the current video source leaves, the marked user previous to the last-joined will be used as the video source; and "first-marked," where the first marked user with video capabilities to join the conference will be the single video source distributed to all other participants - when the current video source leaves, the marked user that joined next will be used as the video source. Use of video in conjunction with the jitterbuffer results in the audio being slightly out of sync with the video - because the jitterbuffer only operates on the audio stream, not the video stream. Jitterbuffer should be disabled when video is used.""")
+        'max_members': _("""Limits the number of participants for a single conference to a specific number. By default, conferences have no participant limit. After the limit is reached, the conference will be locked until someone leaves. Admin-level users are exempt from this limit and will still be able to join otherwise-locked, because of limit, conferences."""),
+        'record_conference': _("""Records the conference call starting when the first user enters the room, and ending when the last user exits the room. The default recorded filename is 'confbridge-<name of conference bridge>-<start time>.wav' and the default format is 8kHz signed linear. By default, this option is disabled. This file will be located in the configured monitoring directory as set in asterisk.conf"""),
+        'internal_sample_rate': _("""Sets the internal native sample rate at which to mix the conference. The "auto" option allows Asterisk to adjust the sample rate to the best quality / performance based on the participant makeup. Numbered values lock the rate to the specified numerical rate. If a defined number does not match an internal sampling rate supported by Asterisk, the nearest sampling rate will be used instead."""),
+        'mixing_interval': _("""Sets, in milliseconds, the internal mixing interval. By default, the mixing interval of a bridge is 20ms. This setting reflects how "tight" or "loose" the mixing will be for the conference. Lower intervals provide a "tighter" sound with less delay in the bridge and consume more system resources. Higher intervals provide a "looser" sound with more delay in the bridge and consume less resources"""),
+        'video_mode': _("""Configured video (as opposed to audio) distribution method for conference participants. Participants must use the same video codec. Confbridge does not provide MCU functionality. It does not transcode, scale, transrate, or otherwise manipulate the video. Options are "none," where no video source is set by default and a video source may be later set via AMI or DTMF actions; "follow_talker," where video distrubtion follows whomever is talking and providing video; "last_marked," where the last marked user with video capabilities to join the conference will be the single video source distributed to all other participants - when the current video source leaves, the marked user previous to the last-joined will be used as the video source; and "first-marked," where the first marked user with video capabilities to join the conference will be the single video source distributed to all other participants - when the current video source leaves, the marked user that joined next will be used as the video source. Use of video in conjunction with the jitterbuffer results in the audio being slightly out of sync with the video - because the jitterbuffer only operates on the audio stream, not the video stream. Jitterbuffer should be disabled when video is used.""")
     }
     form_choices = {
         'internal_sample_rate': [('auto','auto'), ('8000', '8000'),
@@ -446,7 +460,7 @@ class ParticipantProfileAdmin(ModelView, AuthBaseView):
                 'music_on_hold_when_empty',
                 'music_on_hold_class',
             ),
-            gettext('Basic')),
+            _('Basic')),
         rules.FieldSet(
             (
                 'announce_user_count',
@@ -455,7 +469,7 @@ class ParticipantProfileAdmin(ModelView, AuthBaseView):
                 'announcement',
                 'announce_join_leave',
                 ),
-            gettext('Announcements')
+            _('Announcements')
             ),
         rules.FieldSet(
             (
@@ -467,38 +481,52 @@ class ParticipantProfileAdmin(ModelView, AuthBaseView):
                 'jitterbuffer',
                 'dtmf_passthrough',
                 ),
-            gettext('Voice Processing')
+            _('Voice Processing')
             )
     ]
-
+    column_labels = {
+        'name': _('Profile Name'),
+        'legend': _('Legend'),
+    }
+    """ # I'don want to tranlate asterisk profile setting names
+        'admin': _('Admin'),
+        'marked': _('Marked'),
+        'pin': _('PIN'),
+        'startmuted': _('Start Muted'),
+        'quiet': _('Quiet'),
+        'wait_marked': _('Wait Marked'),
+        'end_marked': _('End Marked'),
+        'music_on_hold_when_empty': _('Music On Hold When Empty'),
+        'music_on_hold_class': _(''),
+    """
     column_descriptions = {
-        'admin': gettext('Sets if the user is an Admin or not. By default, no.'),
-        'marked': gettext('Sets if the user is Marked or not. By default, no.'),
-        'startmuted': gettext('Sets if the user should start out muted. By default, no.'),
-        'pin': gettext('Sets if the user must enter a PIN before joining the conference. The user will be prompted for the PIN.'),
-        'startmuted': gettext('Sets if the user should start out muted. By default, no.'),
-        'quiet': gettext('When set, enter/leave prompts and user introductions are not played. By default, no.'),
-        'wait_marked': gettext('Sets if the user must wait for another marked user to enter before joining the conference. By default, no.'),
-        'end_marked': gettext('If enabled, every user with this option in their profile will be removed from the conference when the last marked user exists the conference.'),
-        'dtmf_passthrough': gettext('Whether or not DTMF received from users should pass through the conference to other users. By default, no.'),
-        'music_on_hold_when_empty': gettext('Sets whether music on hold should be played when only one person is in the conference or when the user is waiting on a marked user to enter the conference. By default, off.'),
-        'music_on_hold_class': gettext('Sets the music on hold class to use for music on hold.'),
-        'announce_user_count': gettext('Sets if the number of users in the conference should be announced to the caller. By default, no.'),
-        'announce_user_count_all': gettext('Choices: yes, no, integer. Sets if the number of users should be announced to all other users in the conference when someone joins. When set to a number, the announcement will only occur once the user count is above the specified number'),
-        'announce_only_user': gettext('Sets if the only user announcement should be played when someone enters an empty conference. By default, yes.'),
-        'announcement': gettext('If set, the sound file specified by filename will be played to the user, and only the user, upon joining the conference bridge.'),
-        'announce_join_leave': gettext('When enabled, this option prompts the user for their name when entering the conference. After the name is recorded, it will be played as the user enters and exists the conference. By default, no.'),
-        'dsp_drop_silence': gettext('Drops what Asterisk detects as silence from entering into the bridge. Enabling this option will drastically improve performance and help remove the buildup of background noise from the conference. This option is highly recommended for large conferences, due to its performance improvements.'),
-        'dsp_talking_threshold': gettext("""The time, in milliseconds, by default 160, of sound above what the DSP has established as base-line silence for a user, before that user is considered to be talking. This value affects several options:
+        'admin': _('Sets if the user is an Admin or not. By default, no.'),
+        'marked': _('Sets if the user is Marked or not. By default, no.'),
+        'startmuted': _('Sets if the user should start out muted. By default, no.'),
+        'pin': _('Sets if the user must enter a PIN before joining the conference. The user will be prompted for the PIN.'),
+        'startmuted': _('Sets if the user should start out muted. By default, no.'),
+        'quiet': _('When set, enter/leave prompts and user introductions are not played. By default, no.'),
+        'wait_marked': _('Sets if the user must wait for another marked user to enter before joining the conference. By default, no.'),
+        'end_marked': _('If enabled, every user with this option in their profile will be removed from the conference when the last marked user exists the conference.'),
+        'dtmf_passthrough': _('Whether or not DTMF received from users should pass through the conference to other users. By default, no.'),
+        'music_on_hold_when_empty': _('Sets whether music on hold should be played when only one person is in the conference or when the user is waiting on a marked user to enter the conference. By default, off.'),
+        'music_on_hold_class': _('Sets the music on hold class to use for music on hold.'),
+        'announce_user_count': _('Sets if the number of users in the conference should be announced to the caller. By default, no.'),
+        'announce_user_count_all': _('Choices: yes, no, integer. Sets if the number of users should be announced to all other users in the conference when someone joins. When set to a number, the announcement will only occur once the user count is above the specified number'),
+        'announce_only_user': _('Sets if the only user announcement should be played when someone enters an empty conference. By default, yes.'),
+        'announcement': _('If set, the sound file specified by filename will be played to the user, and only the user, upon joining the conference bridge.'),
+        'announce_join_leave': _('When enabled, this option prompts the user for their name when entering the conference. After the name is recorded, it will be played as the user enters and exists the conference. By default, no.'),
+        'dsp_drop_silence': _('Drops what Asterisk detects as silence from entering into the bridge. Enabling this option will drastically improve performance and help remove the buildup of background noise from the conference. This option is highly recommended for large conferences, due to its performance improvements.'),
+        'dsp_talking_threshold': _("""The time, in milliseconds, by default 160, of sound above what the DSP has established as base-line silence for a user, before that user is considered to be talking. This value affects several options:
 Audio is only mixed out of a user's incoming audio stream if talking is detected. If this value is set too loose, the user will hear themselves briefly each time they begin talking until the DSP has time to establish that they are in fact talking.
 When talker detection AMI events are enabled, this value determines when talking has begun, which causes AMI events to fire. If this value is set too tight, AMI events may be falsely triggered by variants in the background noise of the caller.
 The drop_silence option depends on this value to determine when the user's audio should be mixed into the bridge after periods of silence. If this value is too loose, the beginning of a user's speech will get cut off as they transition from silence to talking."""),
-        'dsp_silence_threshold': gettext("""The time, in milliseconds, by default 2500, of sound falling within what the DSP has established as the baseline silence, before a user is considered to be silent. The best way to approach this option is to set it slightly above the maximum amount of milliseconds of silence a user may generate during natural speech. This value affects several operations:
+        'dsp_silence_threshold': _("""The time, in milliseconds, by default 2500, of sound falling within what the DSP has established as the baseline silence, before a user is considered to be silent. The best way to approach this option is to set it slightly above the maximum amount of milliseconds of silence a user may generate during natural speech. This value affects several operations:
 When talker detection AMI events are enabled, this value determines when the user has stopped talking after a period of talking. If this value is set too low, AMI events indicating that the user has stopped talking may get faslely sent out when the user briefly pauses during mid sentence.
 The drop_silence option depends on this value to determine when the user's audio should begin to be dropped from the bridge, after the user stops talking. If this value is set too low, the user's audio stream may sound choppy to other participants."""),
-        'talk_detection_events': gettext('Sets whether or not notifications of when a user begins and ends talking should be sent out as events over AMI. By default, no.'),
-        'denoise': gettext('Whether or not a noise reduction filter should be applied to the audio before mixing. By default, off. This requires codec_speex to be built and installed. Do not confuse this option with drop_silence. denoise is useful if there is a lot of background noise for a user, as it attempts to remove the noise while still preserving the speech. This option does not remove silence from being mixed into the conference and does come at the cost of a slight performance hit.'),
-        'jitterbuffer': gettext("Whether or not to place a jitter buffer on the caller's audio stream before any audio mixing is performed. This option is highly recommended, but will add a slight delay to the audio and will incur a slight performance penalty. This option makes use of the JITTERBUFFER dialplan function's default adaptive jitter buffer. For a more fine-tuned jitter buffer, disable this option and use the JITTERBUFFER dialplan function on the calling channel, before it enters the ConfBridge application."),
+        'talk_detection_events': _('Sets whether or not notifications of when a user begins and ends talking should be sent out as events over AMI. By default, no.'),
+        'denoise': _('Whether or not a noise reduction filter should be applied to the audio before mixing. By default, off. This requires codec_speex to be built and installed. Do not confuse this option with drop_silence. denoise is useful if there is a lot of background noise for a user, as it attempts to remove the noise while still preserving the speech. This option does not remove silence from being mixed into the conference and does come at the cost of a slight performance hit.'),
+        'jitterbuffer': _("Whether or not to place a jitter buffer on the caller's audio stream before any audio mixing is performed. This option is highly recommended, but will add a slight delay to the audio and will incur a slight performance penalty. This option makes use of the JITTERBUFFER dialplan function's default adaptive jitter buffer. For a more fine-tuned jitter buffer, disable this option and use the JITTERBUFFER dialplan function on the calling channel, before it enters the ConfBridge application."),
 
     }
 
@@ -530,7 +558,7 @@ admin = Admin(
 admin.add_view(ConferenceAdmin(
     Conference,
     db.session,
-    name=lazy_gettext('Conferences'),
+    name=_('Conferences'),
     menu_icon_type='glyph',
     menu_icon_value='glyphicon-bullhorn'
     )
@@ -540,7 +568,7 @@ admin.add_view(ConferenceAdmin(
 admin.add_view(ParticipantAdmin(
     Participant,
     db.session,
-    name=lazy_gettext('Participants'),
+    name=_('Participants'),
     menu_icon_type='glyph',
     menu_icon_value='glyphicon-user'
     )
@@ -549,7 +577,7 @@ admin.add_view(ParticipantAdmin(
 admin.add_view(ContactAdmin(
     Contact,
     db.session,
-    name=lazy_gettext('Contacts'),
+    name=_('Contacts'),
     menu_icon_type='glyph',
     menu_icon_value='glyphicon-book'
     )
@@ -559,7 +587,7 @@ admin.add_view(RecordingAdmin(
     app.config['ASTERISK_MONITOR_DIR'],
     '/static/recording/',
     endpoint='recording',
-    name=lazy_gettext('Recordings'),
+    name=_('Recordings'),
     menu_icon_type='glyph',
     menu_icon_value='glyphicon-hdd'
     )
@@ -568,10 +596,10 @@ admin.add_view(RecordingAdmin(
 admin.add_view(ParticipantProfileAdmin(
     ParticipantProfile,
     db.session,
-    category=lazy_gettext('Profiles'),
+    category=_('Profiles'),
     endpoint='participant_profile',
     url='/profile/participant/',
-    name=lazy_gettext('Participant'),
+    name=_('Participant'),
     menu_icon_type='glyph',
     menu_icon_value='glyphicon-user'
     )
@@ -580,10 +608,10 @@ admin.add_view(ParticipantProfileAdmin(
 admin.add_view(ConferenceProfileAdmin(
     ConferenceProfile,
     db.session,
-    category=lazy_gettext('Profiles'),
+    category=_('Profiles'),
     endpoint='room_profile',
     url='/profile/room/',
-    name=lazy_gettext('Conference'),
+    name=_('Conference'),
     menu_icon_type='glyph',
     menu_icon_value='glyphicon-bullhorn',
     )
