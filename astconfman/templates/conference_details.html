@@ -8,7 +8,7 @@
     <script src="{{url_for('static', filename='js/react-0.13.3.min.js')}}"></script>
     <script src="{{url_for('static', filename='js/JSXTransformer.js')}}"></script>
     <script type="text/javascript" charset="utf-8">
-        $(document).ready(function(){
+        $(document).ready(function(){            
             var socket = io.connect('http://' + document.domain + ':' + location.port);
             socket.emit('join', {room: "{{'conference-%s' % model.id}}"});
             socket.on('log_message', function(msg) {
@@ -207,7 +207,7 @@
         <div class='table-responsive'>
             <small><table id="logsTable" class="table">
                 {% for log in model.logs | sort(attribute='added', reverse=True) %}
-                    <tr style="padding:0;"><td style="white-space:nowrap; padding:0;" title="{{log.added.strftime('%Y-%m-%d %H:%M:%S')}}">{{ log.message }}</td></tr>
+                    <tr style="padding:0;"><td style="white-space:nowrap; padding:0;" {% if log.added %} title="{{log.added.strftime('%Y-%m-%d %H:%M:%S')}}" {% endif %}>{{ log.message }}</td></tr>
                 {% endfor %} 
             </table></small>
         </div>

@@ -1,9 +1,10 @@
 from datetime import datetime
 from flask.ext.babelex import gettext, lazy_gettext
+from flask.ext.socketio import emit
 from datetime import datetime
 from sqlalchemy.ext.hybrid import hybrid_property
 import asterisk
-from app import db
+from app import db, socketio
 
 
 class Contact(db.Model):
@@ -59,6 +60,8 @@ class Conference(db.Model):
         post = ConferenceLog(conference=self, message=message)
         db.session.add(post)
         db.session.commit()
+        socketio.emit('log_message', {'data': message},
+                      room='conference-%s' % self.id)
 
 
 class ConferenceLog(db.Model):

@@ -11,7 +11,7 @@ from jinja2 import Markup
 from wtforms.validators import Required, ValidationError
 from models import Contact, Conference, ConferenceLog, Participant
 from models import ConferenceProfile, ParticipantProfile
-from app import app, db
+from app import app, db, socketio
 from forms import ContactImportForm, ConferenceForm
 import asterisk
 
@@ -303,11 +303,15 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         conf = Conference.query.filter_by(id=conf_id).first_or_404()
         if channel:
             asterisk.confbridge_kick(conf.number, channel)
-            flash(gettext('Channel %(channel)s is kicked.', channel=channel))
+            msg = gettext('Channel %(channel)s is kicked.', channel=channel)
+            flash(msg)
+            conf.log(msg)
         else:
             asterisk.confbridge_kick_all(conf.number)
-            flash(gettext('All participants have been kicked from the conference.'))
-
+            msg = gettext('All participants have been kicked from the conference.')
+            conf.log(msg)
+            flash(msg)
+        socketio.emit('update_participants', room='conference-%s' % conf.id)
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf.id))
 
@@ -318,17 +322,17 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         conf = Conference.query.get_or_404(conf_id)
         if channel:
             asterisk.confbridge_mute(conf.number, channel)
-            msg = _('Participant %(channel)s muted.', channel=channel)
+            msg = gettext('Participant %(channel)s muted.', channel=channel)
             flash(msg)
-            #conf.log(msg)
+            conf.log(msg)
         else:
             # Mute all
             for p in asterisk.confbridge_list_participants(conf.number):
                 asterisk.confbridge_mute(conf.number, p['channel'])
-            msg = _('Conference muted.')
+            msg = gettext('Conference muted.')
             flash(msg)
             conf.log(msg)
-
+        socketio.emit('update_participants', room='conference-%s' % conf.id)
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf_id))
 
@@ -339,13 +343,17 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         conf = Conference.query.get_or_404(conf_id)
         if channel:
             asterisk.confbridge_unmute(conf.number, channel)
-            flash(gettext('Participant %(channel)s unmuted.', channel=channel))
+            msg = gettext('Participant %(channel)s unmuted.', channel=channel)
+            flash(msg)
+            conf.log(msg)
         else:
-            # Unmute all
+            # Mute all
             for p in asterisk.confbridge_list_participants(conf.number):
                 asterisk.confbridge_unmute(conf.number, p['channel'])
-            flash(gettext('Conference unmuted.'))
-
+            msg = gettext('Conference unmuted.')
+            flash(msg)
+            conf.log(msg)
+        socketio.emit('update_participants', room='conference-%s' % conf.id)
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf_id))
 
@@ -354,7 +362,9 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     def record_start(self, conf_id):
         conf = Conference.query.get_or_404(conf_id)
         asterisk.confbridge_record_start(conf.number)
-        flash(gettext('The conference recording has been started.'))
+        msg = gettext('The conference recording has been started.')
+        flash(msg)
+        conf.log(msg)
         return redirect(url_for('.details_view', id=conf_id))
 
 
@@ -362,7 +372,9 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     def record_stop(self, conf_id):
         conf = Conference.query.get_or_404(conf_id)
         asterisk.confbridge_record_stop(conf.number)
-        flash(gettext('The conference recording has been stopped.'))
+        msg = gettext('The conference recording has been stopped.')
+        flash(msg)
+        conf.log(msg)
         return redirect(url_for('.details_view', id=conf_id))
 
 
@@ -370,7 +382,10 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     def lock(self, conf_id):
         conf = Conference.query.get_or_404(conf_id)
         asterisk.confbridge_lock(conf.number)
-        flash(gettext('The conference has been locked.'))
+        msg = gettext('The conference has been locked.')
+        flash(msg)
+        conf.log(msg)
+        socketio.emit('update_participants', room='conference-%s' % conf.id)
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf_id))
 
@@ -379,7 +394,10 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     def unlock(self, conf_id):
         conf = Conference.query.get_or_404(conf_id)
         asterisk.confbridge_unlock(conf.number)
-        flash(gettext('The conference has been unlocked.'))
+        msg = gettext('The conference has been unlocked.')
+        flash(msg)
+        conf.log(msg)
+        socketio.emit('update_participants', room='conference-%s' % conf.id)
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf_id))
 

@@ -2,9 +2,9 @@
 
 import os
 from flask import Flask, send_from_directory, request, Response, session
-from flask import redirect, url_for
+from flask import g, redirect, url_for
 from flask.ext.babelex import Babel, gettext, lazy_gettext
-from flask.ext.socketio import SocketIO, emit
+from flask.ext.socketio import SocketIO, emit, join_room
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.admin import Admin, AdminIndexView
 from flask.ext.migrate import Migrate
@@ -21,8 +21,13 @@ except IOError:
   pass
 
 db = SQLAlchemy()
-#db.app = app
 db.init_app(app)
+
+socketio = SocketIO(app)
+@socketio.on('join')
+def on_join(data):
+    join_room(data['room'])
+
 
 migrate = Migrate(app, db)
 
@@ -30,11 +35,17 @@ from models import Contact, Conference, Participant, ParticipantProfile, Confere
 from views import ContactAdmin, ConferenceAdmin, ParticipantAdmin, RecordingAdmin
 from views import ParticipantProfileAdmin, ConferenceProfileAdmin
 
-socketio = SocketIO(app)
 
 babel = Babel(app)
+@babel.localeselector
+def get_locale():
+    if request.args.get('lang'):
+        session['lang'] = request.args.get('lang')        
+    return session.get('lang', app.config.get('LANGUAGE'))
+
 
 import logging
+logging.basicConfig()
 # Enable SMTP errors
 if not app.debug and app.config['SMTP_LOG_ENABLED']:
     from logging.handlers import SMTPHandler
@@ -64,13 +75,6 @@ if app.config['LOG_ENABLED']:
     ))
     file_handler.setLevel(logging.ERROR)
     app.logger.addHandler(file_handler)
-
-
-@babel.localeselector
-def get_locale():
-    if request.args.get('lang'):
-        session['lang'] = request.args.get('lang')        
-    return session.get('lang', app.config.get('LANGUAGE'))
 
 
 @app.route('/favicon.ico')
