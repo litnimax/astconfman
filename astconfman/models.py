@@ -83,8 +83,8 @@ class Participant(db.Model):
     conference_id = db.Column(db.Integer, db.ForeignKey('conference.id'))
     conference = db.relationship('Conference',
                                  backref=db.backref(
-                                     'participants',
-                                     cascade="delete,delete-orphan"))
+                                     'participants',))
+                                     #cascade="delete,delete-orphan"))
     profile_id = db.Column(db.Integer, db.ForeignKey('participant_profile.id'))
     profile = db.relationship('ParticipantProfile')
     __table_args__ = (db.UniqueConstraint('conference_id', 'phone',

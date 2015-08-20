@@ -1,6 +1,7 @@
+import json
 import time
 from flask import request, render_template, Response, redirect, url_for
-from flask import Blueprint, flash, abort
+from flask import Blueprint, flash, abort, jsonify
 from flask.ext.admin import  Admin, AdminIndexView, BaseView, expose
 from flask.ext.admin.actions import action
 from flask.ext.admin.contrib.sqla import ModelView, filters
@@ -13,7 +14,7 @@ from models import Contact, Conference, ConferenceLog, Participant
 from models import ConferenceProfile, ParticipantProfile
 from app import app, db, socketio
 from forms import ContactImportForm, ConferenceForm
-import asterisk
+from asterisk import *
 
 
 def check_auth(username, password):
@@ -49,7 +50,7 @@ def is_number(form, field):
 
 def is_participant_uniq(form, field):
     p = Participant.query.filter_by(conference=form.data['conference'],
-                                    phone=form.data['phone'])
+                                    phone=form.data['phone']).first()
     if p:
         raise ValidationError(
             gettext('Participant with phone number %(num)s already there.',
@@ -202,10 +203,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
             ('is_public', 'public_participant_profile'),
             _('Open Access')
         ),
-        rules.FieldSet(
-            ('participants', rules.Macro('conference_participants_link')),
-            _('Participants')
-        ),
+        rules.Macro('conference_participants_link'),
     ]
 
     column_formatters = {
@@ -216,22 +214,16 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         'number': dict(validators=[Required(), is_number]),
         'name': dict(validators=[Required()]),
         'conference_profile': dict(validators=[Required()]),
-    }
-    
-    form_widget_args = {
-        'participants': {'disabled': True},
+        'public_participant_profile': dict(validators=[Required()]),
     }
 
 
     @expose('/details/')
     def details_view(self):
-        conf = self.get_one(request.args.get('id', 0))
-        if not conf:
-            abort(404)
+        conf = Conference.query.get_or_404(request.args.get('id', 0))
         self._template_args['confbridge_participants'] = \
-            asterisk.confbridge_list_participants(conf.number)
-        self._template_args['confbridge'] = asterisk.confbridge_get(conf.number)
-            
+            confbridge_list_participants(conf.number)
+        self._template_args['confbridge'] = confbridge_get(conf.number)
         return super(ConferenceAdmin, self).details_view()
 
 
@@ -275,7 +267,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         conf = Conference.query.get_or_404(conf_id)
         phone = request.args.get('phone', None)
         if phone and phone.isdigit():
-            asterisk.originate(conf.number, phone,
+            originate(conf.number, phone,
                 bridge_options=conf.conference_profile.get_confbridge_options(),
                 user_options=conf.public_participant_profile.get_confbridge_options())
             flash(gettext('Number %(phone)s is called for conference.',
@@ -288,10 +280,10 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     def invite_participants(self, conf_id):
         conf = Conference.query.get_or_404(conf_id)
         online_participants = [
-            k['callerid'] for k in asterisk.confbridge_list_participants(conf.number)]
+            k['callerid'] for k in confbridge_list_participants(conf.number)]
         gen = (p for p in conf.participants if p.is_invited and p.phone not in online_participants)
         for p in gen:
-                asterisk.originate(conf.number, p.phone, name=p.name,
+                originate(conf.number, p.phone, name=p.name,
             bridge_options=conf.conference_profile.get_confbridge_options(),
             user_options=p.profile.get_confbridge_options()
             )
@@ -308,12 +300,12 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     def kick(self, conf_id, channel=None):
         conf = Conference.query.filter_by(id=conf_id).first_or_404()
         if channel:
-            asterisk.confbridge_kick(conf.number, channel)
+            confbridge_kick(conf.number, channel)
             msg = gettext('Channel %(channel)s is kicked.', channel=channel)
             flash(msg)
             conf.log(msg)
         else:
-            asterisk.confbridge_kick_all(conf.number)
+            confbridge_kick_all(conf.number)
             msg = gettext('All participants have been kicked from the conference.')
             conf.log(msg)
             flash(msg)
@@ -327,14 +319,14 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     def mute(self, conf_id, channel=None):
         conf = Conference.query.get_or_404(conf_id)
         if channel:
-            asterisk.confbridge_mute(conf.number, channel)
+            confbridge_mute(conf.number, channel)
             msg = gettext('Participant %(channel)s muted.', channel=channel)
             flash(msg)
             conf.log(msg)
         else:
             # Mute all
-            for p in asterisk.confbridge_list_participants(conf.number):
-                asterisk.confbridge_mute(conf.number, p['channel'])
+            for p in confbridge_list_participants(conf.number):
+                confbridge_mute(conf.number, p['channel'])
             msg = gettext('Conference muted.')
             flash(msg)
             conf.log(msg)
@@ -348,14 +340,14 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     def unmute(self, conf_id, channel=None):
         conf = Conference.query.get_or_404(conf_id)
         if channel:
-            asterisk.confbridge_unmute(conf.number, channel)
+            confbridge_unmute(conf.number, channel)
             msg = gettext('Participant %(channel)s unmuted.', channel=channel)
             flash(msg)
             conf.log(msg)
         else:
             # Mute all
-            for p in asterisk.confbridge_list_participants(conf.number):
-                asterisk.confbridge_unmute(conf.number, p['channel'])
+            for p in confbridge_list_participants(conf.number):
+                confbridge_unmute(conf.number, p['channel'])
             msg = gettext('Conference unmuted.')
             flash(msg)
             conf.log(msg)
@@ -367,7 +359,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     @expose('/<int:conf_id>/record_start')
     def record_start(self, conf_id):
         conf = Conference.query.get_or_404(conf_id)
-        asterisk.confbridge_record_start(conf.number)
+        confbridge_record_start(conf.number)
         msg = gettext('The conference recording has been started.')
         flash(msg)
         conf.log(msg)
@@ -377,7 +369,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     @expose('/<int:conf_id>/record_stop')
     def record_stop(self, conf_id):
         conf = Conference.query.get_or_404(conf_id)
-        asterisk.confbridge_record_stop(conf.number)
+        confbridge_record_stop(conf.number)
         msg = gettext('The conference recording has been stopped.')
         flash(msg)
         conf.log(msg)
@@ -387,7 +379,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     @expose('/<int:conf_id>/lock')
     def lock(self, conf_id):
         conf = Conference.query.get_or_404(conf_id)
-        asterisk.confbridge_lock(conf.number)
+        confbridge_lock(conf.number)
         msg = gettext('The conference has been locked.')
         flash(msg)
         conf.log(msg)
@@ -399,7 +391,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     @expose('/<int:conf_id>/unlock')
     def unlock(self, conf_id):
         conf = Conference.query.get_or_404(conf_id)
-        asterisk.confbridge_unlock(conf.number)
+        confbridge_unlock(conf.number)
         msg = gettext('The conference has been unlocked.')
         flash(msg)
         conf.log(msg)
@@ -436,7 +428,7 @@ class ConferenceProfileAdmin(ModelView, AuthBaseView):
     }
     column_descriptions = {
         'max_members': _("""Limits the number of participants for a single conference to a specific number. By default, conferences have no participant limit. After the limit is reached, the conference will be locked until someone leaves. Admin-level users are exempt from this limit and will still be able to join otherwise-locked, because of limit, conferences."""),
-        'record_conference': _("""Records the conference call starting when the first user enters the room, and ending when the last user exits the room. The default recorded filename is 'confbridge-<name of conference bridge>-<start time>.wav' and the default format is 8kHz signed linear. By default, this option is disabled. This file will be located in the configured monitoring directory as set in asterisk.conf"""),
+        'record_conference': _("""Records the conference call starting when the first user enters the room, and ending when the last user exits the room. The default recorded filename is 'confbridge-<name of conference bridge>-<start time>.wav' and the default format is 8kHz signed linear. By default, this option is disabled. This file will be located in the configured monitoring directory as set in conf"""),
         'internal_sample_rate': _("""Sets the internal native sample rate at which to mix the conference. The "auto" option allows Asterisk to adjust the sample rate to the best quality / performance based on the participant makeup. Numbered values lock the rate to the specified numerical rate. If a defined number does not match an internal sampling rate supported by Asterisk, the nearest sampling rate will be used instead."""),
         'mixing_interval': _("""Sets, in milliseconds, the internal mixing interval. By default, the mixing interval of a bridge is 20ms. This setting reflects how "tight" or "loose" the mixing will be for the conference. Lower intervals provide a "tighter" sound with less delay in the bridge and consume more system resources. Higher intervals provide a "looser" sound with more delay in the bridge and consume less resources"""),
         'video_mode': _("""Configured video (as opposed to audio) distribution method for conference participants. Participants must use the same video codec. Confbridge does not provide MCU functionality. It does not transcode, scale, transrate, or otherwise manipulate the video. Options are "none," where no video source is set by default and a video source may be later set via AMI or DTMF actions; "follow_talker," where video distrubtion follows whomever is talking and providing video; "last_marked," where the last marked user with video capabilities to join the conference will be the single video source distributed to all other participants - when the current video source leaves, the marked user previous to the last-joined will be used as the video source; and "first-marked," where the first marked user with video capabilities to join the conference will be the single video source distributed to all other participants - when the current video source leaves, the marked user that joined next will be used as the video source. Use of video in conjunction with the jitterbuffer results in the audio being slightly out of sync with the video - because the jitterbuffer only operates on the audio stream, not the video stream. Jitterbuffer should be disabled when video is used.""")
@@ -640,3 +632,133 @@ admin.add_view(ConferenceProfileAdmin(
     menu_icon_value='glyphicon-bullhorn',
     )
 )
+
+### ASTERISK VIEWS
+asterisk = Blueprint('asterisk', __name__)
+
+def is_authenticated():
+    return request.remote_addr == app.config['ASTERISK_IPADDR']
+
+
+@asterisk.route('/invite_all/<int:conf_number>/<callerid>')
+def invite_all(conf_number, callerid):
+    if not is_authenticated():
+        return 'NOTAUTH'
+    conf = Conference.query.filter_by(number=conf_number).first()
+    if not conf:
+        return 'NOCONF'
+    participant = Participant.query.filter_by(
+        conference=conf, phone=callerid).first()
+    if not participant or not participant.profile.admin:
+        return 'NOTALLOWED'
+    online_participants = [
+        k['callerid'] for k in confbridge_list_participants(
+            conf.number)]
+    gen = (
+        p for p in conf.participants if p.phone not in online_participants)
+    for p in gen:
+            originate(conf.number, p.phone, name=p.name,
+        bridge_options=conf.conference_profile.get_confbridge_options(),
+        user_options=p.profile.get_confbridge_options())
+    return 'OK'
+
+
+@asterisk.route('/checkconf/<conf_number>/<callerid>')
+def check(conf_number, callerid):
+    if not is_authenticated():
+        return 'NOTAUTH'
+    conf = Conference.query.filter_by(number=conf_number).first()
+
+    if not conf:
+        return 'NOCONF'
+
+    elif callerid not in [
+            k.phone for k in conf.participants] and not conf.is_public:
+        message = gettext('Attempt to enter non-public conference from %(phone)s.',
+                    phone=callerid)
+        conf.log(message)
+        return 'NOTPUBLIC'
+
+    else:
+        return 'OK'
+
+
+@asterisk.route('/confprofile/<int:conf_number>')
+def conf_profile(conf_number):
+    if not is_authenticated():
+        return 'NOTAUTH'
+    conf = Conference.query.filter_by(number=conf_number).first()
+    if not conf:
+        return 'NOCONF'
+    return ','.join(conf.conference_profile.get_confbridge_options())
+
+
+@asterisk.route('/userprofile/<int:conf_number>/<callerid>')
+def user_profile(conf_number, callerid):
+    if not is_authenticated():
+        return 'NOTAUTH'
+    conf = Conference.query.filter_by(number=conf_number).first()
+    if not conf:
+        return 'NOCONF'
+    participant = Participant.query.filter_by(conference=conf,
+                                            phone=callerid).first()
+    if participant:
+        # Return participant profile
+        return ','.join(participant.profile.get_confbridge_options())
+    else:
+        # Return public profile
+        return ','.join(
+            conf.public_participant_profile.get_confbridge_options())
+
+
+@asterisk.route('/dial_status/<int:conf_number>/<callerid>/<status>')
+def dial_status(conf_number, callerid, status):
+    if not is_authenticated():
+        return 'NOTAUTH'
+    message = gettext('Could not invite number %(num)s: %(status)s', num=callerid,
+                status=status.capitalize())
+    conference = Conference.query.filter_by(number=conf_number).first_or_404()
+    conference.log(message)
+    return 'OK'
+
+
+@asterisk.route('/enter_conference/<int:conf_number>/<callerid>')
+def enter_conference(conf_number, callerid):
+    if not is_authenticated():
+        return 'NOTAUTH'
+    message = gettext('Number %(num)s has entered the conference.', num=callerid)
+    conference = Conference.query.filter_by(number=conf_number).first_or_404()
+    conference.log(message)
+    socketio.emit('update_participants',
+                  room='conference-%s' % conference.id)
+    return 'OK'
+
+@asterisk.route('/leave_conference/<int:conf_number>/<callerid>')
+def leave_conference(conf_number, callerid):
+    if not is_authenticated():
+        return 'NOTAUTH'
+    message = gettext('Number %(num)s has left the conference.', num=callerid)
+    conference = Conference.query.filter_by(number=conf_number).first_or_404()
+    conference.log(message)
+    socketio.emit('update_participants',
+                  room='conference-%s' % conference.id)
+    return 'OK'
+
+
+@asterisk.route('/unmute_request/<int:conf_number>/<callerid>')
+def unmute_request(conf_number, callerid):
+    if not is_authenticated():
+        return 'NOTAUTH'
+    message = gettext('Unmute request from number %(num)s.', num=callerid)
+    conference = Conference.query.filter_by(number=conf_number).first_or_404()
+    conference.log(message)
+    socketio.emit('unmute_request', {'data': callerid},
+                  room='conference-%s' % conference.id)
+    return 'OK'
+
+
+@asterisk.route('/online_participants.json/<int:conf_number>')
+def online_participants_json(conf_number):
+    ret = confbridge_list_participants(conf_number)
+    return Response(response=json.dumps(ret),
+                    status=200, mimetype='application/json')

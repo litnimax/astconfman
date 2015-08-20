@@ -7,7 +7,6 @@ from transliterate import translit
 from app import app
 
 
-
 def confbridge_list():
     rooms = []
     status, output = commands.getstatusoutput(
@@ -123,6 +122,8 @@ def confbridge_is_locked(confno):
     for bridge in bridges:
         if bridge[0] == confno:
             return bridge[3] == 'locked'
+    # Default - empty conference
+    return False
 
 
 def confbridge_kick(confno, channel):
