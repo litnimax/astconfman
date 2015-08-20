@@ -636,13 +636,13 @@ admin.add_view(ConferenceProfileAdmin(
 ### ASTERISK VIEWS
 asterisk = Blueprint('asterisk', __name__)
 
-def is_authenticated():
+def asterisk_is_authenticated():
     return request.remote_addr == app.config['ASTERISK_IPADDR']
 
 
 @asterisk.route('/invite_all/<int:conf_number>/<callerid>')
 def invite_all(conf_number, callerid):
-    if not is_authenticated():
+    if not asterisk_is_authenticated():
         return 'NOTAUTH'
     conf = Conference.query.filter_by(number=conf_number).first()
     if not conf:
@@ -665,7 +665,7 @@ def invite_all(conf_number, callerid):
 
 @asterisk.route('/checkconf/<conf_number>/<callerid>')
 def check(conf_number, callerid):
-    if not is_authenticated():
+    if not asterisk_is_authenticated():
         return 'NOTAUTH'
     conf = Conference.query.filter_by(number=conf_number).first()
 
@@ -685,7 +685,7 @@ def check(conf_number, callerid):
 
 @asterisk.route('/confprofile/<int:conf_number>')
 def conf_profile(conf_number):
-    if not is_authenticated():
+    if not asterisk_is_authenticated():
         return 'NOTAUTH'
     conf = Conference.query.filter_by(number=conf_number).first()
     if not conf:
@@ -695,7 +695,7 @@ def conf_profile(conf_number):
 
 @asterisk.route('/userprofile/<int:conf_number>/<callerid>')
 def user_profile(conf_number, callerid):
-    if not is_authenticated():
+    if not asterisk_is_authenticated():
         return 'NOTAUTH'
     conf = Conference.query.filter_by(number=conf_number).first()
     if not conf:
@@ -713,7 +713,7 @@ def user_profile(conf_number, callerid):
 
 @asterisk.route('/dial_status/<int:conf_number>/<callerid>/<status>')
 def dial_status(conf_number, callerid, status):
-    if not is_authenticated():
+    if not asterisk_is_authenticated():
         return 'NOTAUTH'
     message = gettext('Could not invite number %(num)s: %(status)s', num=callerid,
                 status=status.capitalize())
@@ -724,7 +724,7 @@ def dial_status(conf_number, callerid, status):
 
 @asterisk.route('/enter_conference/<int:conf_number>/<callerid>')
 def enter_conference(conf_number, callerid):
-    if not is_authenticated():
+    if not asterisk_is_authenticated():
         return 'NOTAUTH'
     message = gettext('Number %(num)s has entered the conference.', num=callerid)
     conference = Conference.query.filter_by(number=conf_number).first_or_404()
@@ -735,7 +735,7 @@ def enter_conference(conf_number, callerid):
 
 @asterisk.route('/leave_conference/<int:conf_number>/<callerid>')
 def leave_conference(conf_number, callerid):
-    if not is_authenticated():
+    if not asterisk_is_authenticated():
         return 'NOTAUTH'
     message = gettext('Number %(num)s has left the conference.', num=callerid)
     conference = Conference.query.filter_by(number=conf_number).first_or_404()
@@ -747,7 +747,7 @@ def leave_conference(conf_number, callerid):
 
 @asterisk.route('/unmute_request/<int:conf_number>/<callerid>')
 def unmute_request(conf_number, callerid):
-    if not is_authenticated():
+    if not asterisk_is_authenticated():
         return 'NOTAUTH'
     message = gettext('Unmute request from number %(num)s.', num=callerid)
     conference = Conference.query.filter_by(number=conf_number).first_or_404()
@@ -759,6 +759,8 @@ def unmute_request(conf_number, callerid):
 
 @asterisk.route('/online_participants.json/<int:conf_number>')
 def online_participants_json(conf_number):
+    if not asterisk_is_authenticated():
+        return 'NOTAUTH'
     ret = confbridge_list_participants(conf_number)
     return Response(response=json.dumps(ret),
                     status=200, mimetype='application/json')
