@@ -13,8 +13,8 @@
         <i class="glyphicon glyphicon-globe"></i> {{_('Language')}}
         <span class="caret"></span></a>
         <ul class="dropdown-menu" role="menu">
-            <li><a href="?lang=en"><span class="lang-sm lang-lbl" lang="en"></span></a></li>
-            <li><a href="?lang=ru"><span class="lang-sm lang-lbl" lang="ru"></span></a></li>
+            <li><a href="{{ request | append_to_query('lang','en') }}"><span class="lang-sm lang-lbl" lang="en"></span></a></li>
+            <li><a href="{{ request | append_to_query('lang','ru') }}"><span class="lang-sm lang-lbl" lang="ru"></span></a></li>
         </ul>    
     </div>
 </div>

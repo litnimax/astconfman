@@ -81,7 +81,10 @@ class Participant(db.Model):
     name = db.Column(db.Unicode(128))
     is_invited = db.Column(db.Boolean, default=True)
     conference_id = db.Column(db.Integer, db.ForeignKey('conference.id'))
-    conference = db.relationship('Conference', backref='participants')
+    conference = db.relationship('Conference',
+                                 backref=db.backref(
+                                     'participants',
+                                     cascade="delete,delete-orphan"))
     profile_id = db.Column(db.Integer, db.ForeignKey('participant_profile.id'))
     profile = db.relationship('ParticipantProfile')
     __table_args__ = (db.UniqueConstraint('conference_id', 'phone',

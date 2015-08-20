@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+from urllib import urlencode
 from flask import Flask, send_from_directory, request, Response, session
 from flask import g, redirect, url_for
 from flask.ext.babelex import Babel, gettext, lazy_gettext
@@ -14,6 +15,16 @@ monkey.patch_all()
 
 app = Flask('ConfMan', instance_relative_config=True)
 app.config.from_object('config')
+
+# For smooth language switcher 
+def append_to_query(s, param, value):
+    params = dict(request.args.items())
+    params[param] = value
+    url = '%s?%s' % (request.path, urlencode(params))
+    print url
+    return url
+app.jinja_env.filters['append_to_query'] = append_to_query
+
 
 try:
   app.config.from_pyfile('config.py')

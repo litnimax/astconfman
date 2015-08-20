@@ -43,8 +43,17 @@ def is_authenticated():
 
 
 def is_number(form, field):
-        if field.data and not field.data.isdigit():
-            raise ValidationError(_('Must be a number!'))
+    if field.data and not field.data.isdigit():
+        raise ValidationError(gettext('Must be a number!'))
+
+
+def is_participant_uniq(form, field):
+    p = Participant.query.filter_by(conference=form.data['conference'],
+                                    phone=form.data['phone'])
+    if p:
+        raise ValidationError(
+            gettext('Participant with phone number %(num)s already there.',
+                    num=form.data['phone']))
 
 
 class AuthBaseView(BaseView):
@@ -142,7 +151,7 @@ class ParticipantAdmin(ModelView, AuthBaseView):
     }
     column_list = ['phone', 'name', 'is_invited', 'conference', 'profile']
     form_args = {
-        'phone': dict(validators=[Required(),is_number]),
+        'phone': dict(validators=[Required(), is_number, is_participant_uniq]),
         'conference': dict(validators=[Required()]),
         'profile': dict(validators=[Required()]),
     }
@@ -165,14 +174,15 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     form_base_class = ConferenceForm
     details_template = 'conference_details.html'
     can_view_details = True
+    edit_template = 'conference_edit.html'
+    create_template = 'conference_create.html'
 
     column_list = ['number', 'name', 'is_public', 'is_locked',
                    'participant_count', 'invited_participant_count',
                    'online_participant_count']
-    #column_filters = ['is_public']
     column_labels = {
-        'number': _('Number'),
-        'name': _('Name'),
+        'number': _('Conference Number'),
+        'name': _('Conference Name'),
         'participant_count': _('Participants'),
         'invited_participant_count': _('Invited Participants'),
         'online_participant_count': _('Participants Online'),
@@ -193,7 +203,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
             _('Open Access')
         ),
         rules.FieldSet(
-            ('participants',),
+            ('participants', rules.Macro('conference_participants_link')),
             _('Participants')
         ),
     ]
@@ -202,16 +212,12 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         'legend': lambda v,c,m,n: legend_formatter(v,c,m,n),
     }
 
-    column_descriptions = {
-        'participants': _(u'Use <a href="/participant/">Participants</a> menu to manage participant list'),
-    }
-
     form_args = {
-        'number': {'validators': [Required(), is_number]},
-        'name': {'validators': [Required()]},
-        'conference_profile': {'validators': [Required()]} ,   
+        'number': dict(validators=[Required(), is_number]),
+        'name': dict(validators=[Required()]),
+        'conference_profile': dict(validators=[Required()]),
     }
-
+    
     form_widget_args = {
         'participants': {'disabled': True},
     }
@@ -560,7 +566,7 @@ class MyAdminIndexView(AdminIndexView):
 
 admin = Admin(
     app,
-    name='PBXWare Conf Manager',
+    name='Asterisk Conference Manager',
     index_view=MyAdminIndexView(        
         template='admin/index.html',
         url='/'

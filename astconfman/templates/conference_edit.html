@@ -1,0 +1,10 @@
+{% extends "admin/model/edit.html" %}
+
+{% macro conference_participants_link() %}
+<div class="form-group">
+    <div class="col-md-2"></div>
+    <div class="col-md-10">      
+    {{ _('Use menu') }} <a href="{{url_for('participant.index_view')}}?flt1_0={{model.number}}">{{_('Participants')}}</a> {{ _('to manage participant list') }}
+    </div>    
+  </div>
+{% endmacro %}
