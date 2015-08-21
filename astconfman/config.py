@@ -2,8 +2,10 @@
 import os
 from flask.ext.babelex import lazy_gettext as _
 
+BRAND_NAV = u'Asterisk Conference Manager'
 BRAND_FOOTER = _(u"""(C) 2015 Asterisk Guru | <a href="http://asteriskguru.ru/">www.asteriskguru.ru</a> | Professional Asterisk support & development services.""")
-BRAND_LOGO = 'static/pbxware_logo.png'
+BRAND_LOGO = 'static/logo.png'
+BRAND_LOGO_URL = 'http://www.pbxware.ru/'
 
 ADMINS = {
     'admin': dict(password='test', email='litnimax@pbxware.ru'),

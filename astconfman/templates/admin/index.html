@@ -3,7 +3,11 @@
 {% block body %}
 {% if config['BRAND_LOGO'] %}
     <div class="row">
-        <div class="well well-sm"><img class="img-responsive" src="{{ config['BRAND_LOGO']}}"/></div>
+        <div class="well well-sm">
+            <a href="{{ config['BRAND_LOGO_URL'] }}">
+                <img class="img-responsive" src="{{ config['BRAND_LOGO']}}"/>
+            </a>
+        </div>
     </div>
 {% endif %}
 <hr/>

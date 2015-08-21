@@ -572,8 +572,8 @@ class MyAdminIndexView(AdminIndexView):
 
 admin = Admin(
     app,
-    name='Asterisk Conference Manager',
-    index_view=MyAdminIndexView(        
+    name=app.config['BRAND_NAV'],
+    index_view=MyAdminIndexView(
         template='admin/index.html',
         url='/'
     ),
