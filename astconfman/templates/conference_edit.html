@@ -1,10 +1,13 @@
 {% extends "admin/model/edit.html" %}
+{% import 'admin/actions.html' as actionlib with context %}
 
 {% macro conference_participants_link() %}
 <div class="form-group">
     <div class="col-md-2"></div>
-    <div class="col-md-10">      
-    {{ _('Use menu') }} <a href="{{url_for('participant.index_view')}}?flt1_0={{model.number}}">{{_('Participants')}}</a> {{ _('to manage participant list') }}
+    <div class="col-md-10">
+    {%- trans url=url_for('participant.index_view'), number=model.number -%} 
+        Use menu <a href="{{ url }}?flt1_0={{number}}">Participants</a> to manage participant list or manage participants below.
+    {%- endtrans -%}
     </div>    
   </div>
 {% endmacro %}

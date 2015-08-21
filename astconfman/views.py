@@ -173,14 +173,15 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     This is active conference started in a room.
     """
     form_base_class = ConferenceForm
-    details_template = 'conference_details.html'
     can_view_details = True
+    details_template = 'conference_details.html'
     edit_template = 'conference_edit.html'
     create_template = 'conference_create.html'
 
     column_list = ['number', 'name', 'is_public', 'is_locked',
                    'participant_count', 'invited_participant_count',
                    'online_participant_count']
+    inline_models = (Participant,)
     column_labels = {
         'number': _('Conference Number'),
         'name': _('Conference Name'),
@@ -203,7 +204,10 @@ class ConferenceAdmin(ModelView, AuthBaseView):
             ('is_public', 'public_participant_profile'),
             _('Open Access')
         ),
-        rules.Macro('conference_participants_link'),
+        rules.FieldSet(
+            (rules.Macro('conference_participants_link'), 'participants'),             
+            _('Participants')
+        ),
     ]
 
     column_formatters = {
