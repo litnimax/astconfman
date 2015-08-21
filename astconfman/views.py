@@ -759,8 +759,7 @@ def unmute_request(conf_number, callerid):
 
 @asterisk.route('/online_participants.json/<int:conf_number>')
 def online_participants_json(conf_number):
-    if not asterisk_is_authenticated():
-        return 'NOTAUTH'
+    # This is public view called from WEB clients
     ret = confbridge_list_participants(conf_number)
     return Response(response=json.dumps(ret),
                     status=200, mimetype='application/json')
