@@ -9,14 +9,10 @@ from flask.ext.socketio import SocketIO, emit, join_room
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.admin import Admin, AdminIndexView
 from flask.ext.migrate import Migrate
-from gevent import monkey
-monkey.patch_all()
-
-import logging
-logging.basicConfig()
 
 app = Flask('AstConfMan', instance_relative_config=True)
 app.config.from_object('config')
+
 
 # For smooth language switcher
 def append_to_query(s, param, value):
@@ -36,7 +32,7 @@ db = SQLAlchemy()
 db.init_app(app)
 
 
-socketio = SocketIO(app)
+socketio = SocketIO(app, logger=False, engineio_logger=False)
 @socketio.on('join')
 def on_join(data):
     join_room(data['room'])

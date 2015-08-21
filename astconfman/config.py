@@ -21,14 +21,6 @@ SECRET_KEY = 'change_me_here_to_random_key'
 WTF_CSRF_ENABLED = True
 LANGUAGE = 'en'
 
-LOG_ENABLED = True
-LOG_FILE = os.path.join(os.path.dirname(__name__), 'astconfman.log')
-
-SMTP_LOG_ENABLED = False
-SMTP_HOST = 'smtp.google.com'
-SMTP_PORT = 587
-SMTP_FROM = 'yourid@gmail.com'
-
 # Asterisk
 ASTERISK_SPOOL_DIR = '/var/spool/asterisk/outgoing/'
 ASTERISK_MONITOR_DIR = '/var/spool/asterisk/monitor/'

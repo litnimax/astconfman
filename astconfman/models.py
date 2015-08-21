@@ -60,8 +60,11 @@ class Conference(db.Model):
         post = ConferenceLog(conference=self, message=message)
         db.session.add(post)
         db.session.commit()
-        socketio.emit('log_message', {'data': message},
-                      room='conference-%s' % self.id)
+        socketio.emit('log_message', {
+            'data': message,
+            'room': 'conference-%s' % self.id
+        })
+
 
 
 class ConferenceLog(db.Model):

@@ -5,7 +5,7 @@ Flask-BabelEx
 Flask-SQLAlchemy
 Flask-WTF
 Flask-Script
-Flask-SocketIO
+Flask-SocketIO==1.0a1
 Flask-Migrate
 Jinja2
 MarkupSafe
