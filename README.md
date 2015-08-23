@@ -5,7 +5,12 @@ This is a WEB based interface for managing Asterisk ConfBridge appliction.
 
 You can request a [new feature](https://github.com/litnimax/astconfman/issues/new) or see current requests and bugs [here](https://github.com/litnimax/astconfman/issues).
 
-# Features
+### How it works
+Flask is used as a WEB server. By default it uses SQLite3 database for storage but other datasources are also supported (see config.py). 
+
+Conference participants are invited using Asterisk call out files. To track participant dial status local channel is used. No AMI/AGI/ARI is used. Everything is built around ```asterisk -rx 'confbridge <...>'``` CLI commands. Asterisk and Flask are supposed to be run on the same server but it's possible to implement remote asterisk command execution via SSH. The software is distributed as as on BSD license. Asterisk resellers can easily implement their own logo and footer and freely redistribute it to own customers (see BRAND_ options in config.py).
+
+### Features
 
 * Private (only for configured participants) and public (guests can join) conferences.
 * Muted participant can indicate unmute request. 
@@ -62,7 +67,7 @@ cd astconfman
 ```
 Now visit http://localhost:5000/ in your browser.
 
-Default user/password is admin/test.
+**Default user/password is admin/test**. Don't forget to override it.
 
 ### Configuration
 #### WEB server configuration
@@ -85,6 +90,9 @@ ADMINS = {
 ASTERISK_IPADDR = '192.168.0.254'
 LISTEN_ADDRESS = '0.0.0.0'
 DATABASE_FILE = '/var/lib/db/astconfman.db'
+ASTERISK_SPOOL_DIR = '/srv/asterisk/var/spool/asterisk/outgoing/'
+ASTERISK_MONITOR_DIR = '/srv/asterisk/var/spool/asterisk/monitor/'
+ASTERISK_EXECUTABLE = '/srv/asterisk/sbin/asterisk'
 ```
 
 #### Asterisk configuration
