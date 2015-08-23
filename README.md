@@ -56,6 +56,9 @@ cd astconfman
 ./manage.py init
 ./run.py
 ```
+Now visit http://localhost:5000/ in your browser.
+
+Default user/password is admin/test.
 
 ### Configuration
 #### WEB server configuration
