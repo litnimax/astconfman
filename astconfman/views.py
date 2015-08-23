@@ -12,6 +12,7 @@ from jinja2 import Markup
 from wtforms.validators import Required, ValidationError
 from models import Contact, Conference, ConferenceLog, Participant
 from models import ConferenceProfile, ParticipantProfile
+from utils.validators import is_number, is_participant_uniq
 from app import app, db, socketio
 from forms import ContactImportForm, ConferenceForm
 from asterisk import *
@@ -41,20 +42,6 @@ def authenticate():
 def is_authenticated():
     auth = request.authorization
     return auth and check_auth(auth.username, auth.password)
-
-
-def is_number(form, field):
-    if field.data and not field.data.isdigit():
-        raise ValidationError(gettext('Must be a number!'))
-
-
-def is_participant_uniq(form, field):
-    p = Participant.query.filter_by(conference=form.data['conference'],
-                                    phone=form.data['phone']).first()
-    if p:
-        raise ValidationError(
-            gettext('Participant with phone number %(num)s already there.',
-                    num=form.data['phone']))
 
 
 class AuthBaseView(BaseView):
@@ -179,8 +166,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     create_template = 'conference_create.html'
 
     column_list = ['number', 'name', 'is_public', 'is_locked',
-                   'participant_count', 'invited_participant_count',
-                   'online_participant_count']
+                   'participant_count', 'invited_participant_count']
     inline_models = (Participant,)
     column_labels = {
         'number': _('Conference Number'),
@@ -242,13 +228,13 @@ class ConferenceAdmin(ModelView, AuthBaseView):
 
             conference = Conference.query.filter_by(
                 id=request.form['conference']).first_or_404()
-            
+
             profile = ParticipantProfile.query.filter_by(
                 id=request.form['profile']).first_or_404()
 
             contacts = Contact.query.filter(
                     Contact.id.in_(request.form['ids'].split(',')))
-            
+
             for c in contacts:
                 if Participant.query.filter_by(phone=c.phone,
                                                conference=conference).first():
@@ -262,7 +248,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
 
                 db.session.add(p)
             db.session.commit()
-                    
+
         return redirect(url_for('.edit_view', id=conference.id))
 
 

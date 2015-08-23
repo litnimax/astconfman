@@ -8,9 +8,9 @@ from flask.ext.babelex import lazy_gettext as _
 
 
 class ContactImportForm(Form):
-    filename = FileField(_('File'),
-            validators=[file_required(), 
-                        file_allowed(['csv', 'CSV'])])
+    filename = FileField(_('File'), validators=[
+        file_required(),
+        file_allowed(['csv', 'CSV'])])
 
     def validate_filename(form, field):
         data = field.data.readlines()
@@ -18,19 +18,17 @@ class ContactImportForm(Form):
         for line in data:
             if not len(line.split(',')) == 2:
                 msg = _('CSV file is broken, line %(linenum)s',
-                              linenum=linenum)                
+                        linenum=linenum)
                 raise ValidationError(msg)
             elif not line[0].isdigit():
                 raise ValidationError(_(
-                    'The first column does not contain phone number, line %(linenum)s', linenum=linenum))
+                    'The first column does not contain phone '
+                    'number, line %(linenum)s', linenum=linenum))
             linenum += 1
         field.data.seek(0)
-                
+
 
 class ConferenceForm(BaseAdminForm):
-    #class Meta:
-    #    locales = ['ru_RU']
-    #  See https://github.com/litnimax/astconfman/issues/8
 
     def validate_is_public(self, field):
         profile = self.data.get('public_participant_profile')
