@@ -7,7 +7,7 @@ This is a WEB based interface for managing Asterisk ConfBridge appliction.
 
 * Private (only for configured participants) and public (guests can join) conferences.
 * Muted participant can indicate unmute request. 
-* Contact management (addressbook).
+* Contact management (addressbook) with import contacts feature.
 * Conference recording (always / ondemand, web access to recordings).
 * Support for dynamic ConfBridge [profiles](https://wiki.asterisk.org/wiki/display/AST/ConfBridge#ConfBridge-BridgeProfileConfigurationOptions) (any profile option can be set).
 * Invite participants from WEB or phone (on press DTMF digit).
@@ -18,6 +18,17 @@ This is a WEB based interface for managing Asterisk ConfBridge appliction.
  * Mute / unmute one / all 
 * Realtime conference events log (enter, leave, kicked, mute / unmute, dial status, etc)
 * Asterisk intergrators re-branding ready (change logo, banner, footer)
+
+Here is the demo with the folling scenatio:
+* Import contacts.
+* Add contacts to participants.
+* Invite all participants into conference.
+* Enter conference from phone.
+* Unmute request from phone.
+* Invite customer by his PSTN number.
+* Enter non-public conference.
+
+[![Demo](http://img.youtube.com/vi/R1EV4D8cFj8/0.jpg)](https://youtu.be/R1EV4D8cFj8 "Demo")
 
 ### Installation
 Download the latest version:
@@ -38,6 +49,13 @@ source env/bin/activate
 pip install -r requirements.txt
 ```
 The above will download and install all runtime requirements.
+
+Now you should init database and run the server:
+```
+cd astconfman
+./manage.py init
+./run.py
+```
 
 ### Configuration
 #### WEB server configuration
@@ -63,27 +81,34 @@ DATABASE_FILE = '/var/lib/db/astconfman.db'
 ```
 
 #### Asterisk configuration
-You must include files in asterisk_etc folder from your Asterisk installation.
+Asterisk must have CURL function compiled and loaded. Check it with
+```
+*CLI> core show  function CURL
+```
+You must include files in astconfman/asterisk_etc folder from your Asterisk installation.
 
 Put 
 ```
-#include /path/to/astconfman-master/asterisk_etc/extensions.conf
+#include /path/to/astconfman/asterisk_etc/extensions.conf
 ```
 to your /etc/asterisk/extensions.conf
-and 
+and
 ```
-#include /path/to/astconfman-master/asterisk_etc/confbridge.conf
+#include /path/to/astconfman/asterisk_etc/confbridge.conf
 ```
 to your /etc/asterisk/confbridge.conf.
 
-### Run WEB server
-Init database:
-```
-cd astconfman
-./manage.py init
-```
-Run:
-```
-./run.py
-```
+Open extensions.conf with your text editor and set your settings in *globals* section.
+
+### Participant menu
+While in the conference participants can use the following DTMF options:
+
+* 1 - Toggle mute / unmute myself
+* 4 - Decrease listening volume
+* 6 - Increase listening volume
+* 7 - Decrease talking volume
+* 9 - Increase talking volume.
+* 0 - Invite all / not yet connected participants (admin profile only)
+* * - Unmute request
+* # - Leave conference.
 
