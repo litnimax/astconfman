@@ -1,5 +1,5 @@
 # Asterisk ConfBridge Manager
-This is a WEB based interface for managing Asterisk ConfBridge appliction.
+This is a WEB based interface for managing Asterisk ConfBridge application.
 
 **Built on Asterisk ConfBridge, Flask, SocketIO, React.js**
 
