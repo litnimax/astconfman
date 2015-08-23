@@ -1,9 +1,11 @@
-# Asterisk Conference Manager
-**Built on Flask, SocketIO, React.js**
-
+# Asterisk ConfBridge Manager
 This is a WEB based interface for managing Asterisk ConfBridge appliction.
 
-**Features**:
+**Built on Asterisk ConfBridge, Flask, SocketIO, React.js**
+
+You can request a [new feature](https://github.com/litnimax/astconfman/issues/new) or see current requests and bugs [here](https://github.com/litnimax/astconfman/issues).
+
+# Features
 
 * Private (only for configured participants) and public (guests can join) conferences.
 * Muted participant can indicate unmute request. 
@@ -18,6 +20,8 @@ This is a WEB based interface for managing Asterisk ConfBridge appliction.
  * Mute / unmute one / all 
 * Realtime conference events log (enter, leave, kicked, mute / unmute, dial status, etc)
 * Asterisk intergrators re-branding ready (change logo, banner, footer)
+
+### Demo
 
 Here is the demo with the folling scenatio:
 * Import contacts.
@@ -106,12 +110,15 @@ Open extensions.conf with your text editor and set your settings in *globals* se
 ### Participant menu
 While in the conference participants can use the following DTMF options:
 
-* 1 - Toggle mute / unmute myself
-* 4 - Decrease listening volume
-* 6 - Increase listening volume
-* 7 - Decrease talking volume
+* 1 - Toggle mute / unmute myself.
+* 2 - Unmute request.
+* 3 - Toggle mute all participants (admin profile only).
+* 4 - Decrease listening volume.
+* 5 - Reset listening volume.
+* 6 - Increase listening volume.
+* 7 - Decrease talking volume.
+* 8 - Reset talking volume.
 * 9 - Increase talking volume.
-* 0 - Invite all / not yet connected participants (admin profile only)
-* * - Unmute request
-* # - Leave conference.
+* 0 - Invite all / not yet connected participants (admin profile only).
+
 
