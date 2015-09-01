@@ -26,9 +26,6 @@ ADMINS = {
 
 }
 
-# confbridge list participants differ from version to version
-ASTERISK_VERSION = '13.2.0'
-
 # ASTERISK_IPADDR - IP Address of Asterisk server. All other requests will be denied.
 ASTERISK_IPADDR = '127.0.0.1'
 

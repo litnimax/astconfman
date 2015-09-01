@@ -6,7 +6,7 @@ from flask.ext.babelex import gettext
 from transliterate import translit
 from app import app
 
-
+"""
 def _get_version():
     version = app.config.get('ASTERISK_VERSION', None)
     if not version:
@@ -17,7 +17,7 @@ def _get_version():
         return formatted
     except (IndexError, ValueError):
         raise Exception('You must set the correct Asterisk version number like 13.2.0')
-
+"""
 
 def _cli_command(cmd):
     status, output = commands.getstatusoutput(
@@ -40,23 +40,26 @@ def confbridge_list():
 
 def confbridge_list_participants(confno):
     output = _cli_command('confbridge list %s' % confno)
+    if 'No conference' in output:
+        return []
     participants = []
     lines = output.split('\n')
-    # No participants is the same for all versions
-    if len(lines) < 3:
-        return []
-    ast_version = _get_version()
+    header = lines[0].split()
     for line in lines[2:]:
-        print 1, line
         line = line.split()
         channel = line[0]
         flags = ''
         callerid = ''
-        if ast_version < '120000':
+        if len(header) == 7 and header[6] == 'CallerID':
+            # ['Channel', 'User', 'Profile', 'Bridge', 'Profile', 'Menu', 'CallerID']
+            if len(line) == 3:
+                # User Profile and Bridge Profile are empty as it should be.
+                callerid = line[2]
+        elif len(header) == 8 and header[6] == 'CallerID':
+            # ['Channel', 'User', 'Profile', 'Bridge', 'Profile', 'Menu', 'CallerID', 'Muted']
             if len(line) == 4:
                 callerid = line[2]
                 flags = 'm' if line[3] == 'Yes' else ''
-
         else:
             if len(line) == 3:
                 # No flags
@@ -73,7 +76,7 @@ def confbridge_list_participants(confno):
                 'callerid': callerid,
                 }
         )
-
+    print participants
     return participants
 
 
@@ -117,6 +120,13 @@ def confbridge_get(confno):
                 'marked': False if line[2] == '0' else True,
                 'locked': False if line[3] == 'unlocked' else True
             }
+    # If no conference is running return empty dict
+    return {
+        'name': confno,
+        'users': 0,
+        'marked': False,
+        'locked': False
+    }
 
 
 def confbridge_get_user_count(confno):
