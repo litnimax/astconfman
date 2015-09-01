@@ -79,7 +79,7 @@
                     <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                         {{_('Manage Conference')}} {{ model }}
                         <span class="caret"></span>
-                    {% if confbridge[3] == 'locked' %}  <span class='glyphicon glyphicon-lock'></span> {% endif %} </button> 
+                    {% if confbridge.locked %}  <span class='glyphicon glyphicon-lock'></span> {% endif %} </button> 
                     <ul class="dropdown-menu" aria-labelledby="dropdownMenu">
                         <li><a href="{{ url_for('.invite_participants', conf_id=model.id) }}"><span class='glyphicon glyphicon-phone-alt'></span> {{ _('Invite All Participants') }}</a></li>                                        
                         <li>
@@ -96,7 +96,7 @@
                         <li><a href="{{ url_for('.unmute', conf_id=model.id) }}"><span class="glyphicon glyphicon-volume-up"></span> {{ _('Unmute All') }}</a></li>
                         <li><a href="{{ url_for('.record_start', conf_id=model.id) }}"><span class="glyphicon glyphicon-record"></span> {{ _('Start Recording') }}</a></li>
                         <li><a href="{{ url_for('.record_stop', conf_id=model.id) }}"><span class="glyphicon glyphicon-stop"></span> {{ _('Stop Recording') }}</a></li>
-                        {% if confbridge[3] == 'locked' %}
+                        {% if confbridge.locked %}
                             <li><a href="{{ url_for('.unlock', conf_id=model.id) }}"><span class='glyphicon glyphicon-lock'></span> {{ _('Unlock') }}</a></li>
                         {% else %}
                             <li><a href="{{ url_for('.lock', conf_id=model.id) }}"><span class='glyphicon glyphicon-lock'></span> {{ _('Lock') }}</a></li>
