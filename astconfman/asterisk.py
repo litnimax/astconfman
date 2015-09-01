@@ -55,15 +55,16 @@ def confbridge_list_participants(confno):
             if len(line) == 3:
                 # User Profile and Bridge Profile are empty as it should be.
                 callerid = line[2]
-        elif len(header) == 8 and header[6] == 'CallerID':
+        elif len(header) == 8 and header[7] == 'Muted':
             # ['Channel', 'User', 'Profile', 'Bridge', 'Profile', 'Menu', 'CallerID', 'Muted']
             if len(line) == 4:
+                # User Profile and Bridge Profile are empty as it should be.
                 callerid = line[2]
                 flags = 'm' if line[3] == 'Yes' else ''
-        else:
+        elif len(header) == 8 and 
+            # ['Channel', 'Flags', User', 'Profile', 'Bridge', 'Profile', 'Menu', 'CallerID']
             if len(line) == 3:
                 # No flags
-                flags = ''
                 callerid = line[2]
             elif len(line) == 4:
                 # Flags are set
