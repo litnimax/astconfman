@@ -41,6 +41,10 @@ Here is the demo with the folling scenatio:
 
 ### Installation
 #### Requirements
+
+* Asterisk 11, 12 or 13. Only Asterisk 12/13 have confbridge list flags (muted, admin, marked) so Asterisk 11 is supported partially. 
+* Python 2.7
+
 On Ubuntu:
 ```
 sudo apt-get install python-pip python-virtualenv python-dev
