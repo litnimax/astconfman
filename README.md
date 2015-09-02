@@ -121,6 +121,11 @@ to your /etc/asterisk/confbridge.conf.
 
 Open extensions.conf with your text editor and set your settings in *globals* section.
 
+Open /etc/asterisk/asterisk.conf and be sure that 
+```
+live_dangerously = no
+```
+
 ### Participant menu
 While in the conference participants can use the following DTMF options:
 
