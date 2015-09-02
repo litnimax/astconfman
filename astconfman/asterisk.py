@@ -76,7 +76,6 @@ def confbridge_list_participants(confno):
                 'callerid': callerid,
                 }
         )
-    print participants
     return participants
 
 
