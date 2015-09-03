@@ -64,14 +64,17 @@ def confbridge_list_participants(confno):
         elif len(header) == 8 and header[1] == 'Flags':
             # ['Channel', 'Flags', User', 'Profile', 'Bridge', 'Profile', 'Menu', 'CallerID']
             if len(line) == 3:
-                # No flags
+                # No flags no default profiles
                 callerid = line[2]
             elif len(line) == 4:
-                # Flags are set
+                # Flags are set default profiles not set
                 flags = line[1]
                 callerid = line[3]
+            elif len(line) == 5:
+                # Flags are not set and default profiles are set
+                callerid = line[4]
             elif len(line) == 6:
-                # Flags are set and default profiles also
+                # Flags are set and default profiles also set
                 flags = line[1]
                 callerid = line[5]
 
