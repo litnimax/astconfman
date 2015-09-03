@@ -70,6 +70,10 @@ def confbridge_list_participants(confno):
                 # Flags are set
                 flags = line[1]
                 callerid = line[3]
+            elif len(line) == 6:
+                # Flags are set and default profiles also
+                flags = line[1]
+                callerid = line[5]
 
         participants.append({
                 'channel': channel,
