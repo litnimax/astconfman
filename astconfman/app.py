@@ -6,9 +6,10 @@ from flask import Flask, send_from_directory, request, Response, session
 from flask import g, redirect, url_for
 from flask.ext.babelex import Babel, gettext, lazy_gettext
 from flask.ext.socketio import SocketIO, emit, join_room
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask.ext.sqlalchemy import SQLAlchemy, models_committed
 from flask.ext.admin import Admin, AdminIndexView
 from flask.ext.migrate import Migrate
+
 
 app = Flask('AstConfMan', instance_relative_config=True)
 app.config.from_object('config')

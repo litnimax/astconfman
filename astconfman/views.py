@@ -1,5 +1,7 @@
 import json
 import time
+from os.path import dirname, join
+from crontab import CronTab
 from flask import request, render_template, Response, redirect, url_for
 from flask import Blueprint, flash, abort, jsonify
 from flask.ext.admin import  Admin, AdminIndexView, BaseView, expose
@@ -11,8 +13,8 @@ from flask.ext.babelex import lazy_gettext as _, gettext
 from jinja2 import Markup
 from wtforms.validators import Required, ValidationError
 from models import Contact, Conference, ConferenceLog, Participant
-from models import ConferenceProfile, ParticipantProfile
-from utils.validators import is_number, is_participant_uniq
+from models import ConferenceProfile, ParticipantProfile, ConferenceSchedule
+from utils.validators import is_number, is_participant_uniq, is_crontab_valid
 from app import app, db, socketio
 from forms import ContactImportForm, ConferenceForm
 from asterisk import *
@@ -269,15 +271,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     @expose('/<int:conf_id>/invite_participants')
     def invite_participants(self, conf_id):
         conf = Conference.query.get_or_404(conf_id)
-        online_participants = [
-            k['callerid'] for k in confbridge_list_participants(conf.number)]
-        gen = (p for p in conf.participants if p.is_invited and p.phone not in online_participants)
-        for p in gen:
-                originate(conf.number, p.phone, name=p.name,
-            bridge_options=conf.conference_profile.get_confbridge_options(),
-            user_options=p.profile.get_confbridge_options()
-            )
-
+        conf.invite_participants()
         flash(gettext(
                 'All the participants where invited to the conference'))
         time.sleep(1)
@@ -407,6 +401,44 @@ class ConferenceAdmin(ModelView, AuthBaseView):
             db.session.delete(log)
         db.session.commit()
         return redirect(url_for('.details_view', id=conf_id))
+
+
+
+class ConferenceScheduleAdmin(ModelView, AuthBaseView):
+    list_template = 'conference_schedule_list.html'
+    column_list = ['conference', 'entry']
+    form_columns = column_list
+    column_labels = {
+        'entry': _('Entry'),
+        'conference': _('Conference'),
+    }
+    column_descriptions = {
+        'entry': _("""Format: Minute Hour Day-of-Month Month Day-of-Week. Examples: <br/>
+30 10 * * 1,2,3,4,5 - Every workday at 10:30 a.m. <br/>
+0 10 1 * * - Every 1-st day of every month at 10:00 a.m. <br/>
+See Linux Crontab: 15 Awesome Cron Job Examples - <br/>
+http://www.thegeekstuff.com/2009/06/15-practical-crontab-examples/
+"""),
+    }
+    form_args = {
+        'conference': {'validators': [Required()]},
+        'entry': {'validators': [Required(), is_crontab_valid]}
+    }
+
+
+    @expose('/install')
+    def install(self):
+        flask_cron = CronTab(user=True)
+        flask_cron.remove_all()
+        print __name__, dirname(__file__), join(dirname(__file__), 'cron_job.sh %s')
+        for conference_schedule in ConferenceSchedule.query.all():
+            job = flask_cron.new(command=join(dirname(__file__),
+                        'cron_job.sh %s' % conference_schedule.conference.id),
+                        comment='%s' % conference_schedule.conference)
+            job.setall(conference_schedule.entry)
+        flask_cron.write_to_user()
+        flash(gettext('Crontab has been installed successfully.'))
+        return redirect(url_for('.index_view'))
 
 
 class RecordingAdmin(FileAdmin, AuthBaseView):
@@ -577,6 +609,16 @@ admin.add_view(ConferenceAdmin(
     name=_('Conferences'),
     menu_icon_type='glyph',
     menu_icon_value='glyphicon-bullhorn'
+    )
+)
+
+admin.add_view(ConferenceScheduleAdmin(
+    ConferenceSchedule,
+    db.session,
+    endpoint='conference_schedule',
+    name=_('Plan'),
+    menu_icon_type='glyph',
+    menu_icon_value='glyphicon-calendar',
     )
 )
 

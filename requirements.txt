@@ -12,11 +12,13 @@ MarkupSafe
 SQLAlchemy
 WTForms
 Werkzeug
+blinker
 gevent
 gevent-socketio
 gevent-websocket
 greenlet
 transliterate
 itsdangerous
+python-crontab
 pytz
 speaklater

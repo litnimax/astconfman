@@ -53,5 +53,11 @@ def init():
     db.session.commit()
 
 
+@manager.command
+def start_conf(conf_id):
+    conf = Conference.query.get_or_404(conf_id)
+    conf.invite_participants()
+
+
 if __name__ == '__main__':
     manager.run()
