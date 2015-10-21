@@ -13,6 +13,11 @@ manager.add_command('db', MigrateCommand)
 
 
 @manager.command
+def create_schema():
+    db.create_all()
+
+
+@manager.command
 def init():
     db.drop_all()
     db.create_all()
@@ -54,9 +59,10 @@ def init():
 
 
 @manager.command
-def start_conf(conf_id):
-    conf = Conference.query.get_or_404(conf_id)
-    conf.invite_participants()
+def start_conf(conf_num):
+    conf = Conference.query.filter_by(number=conf_num).first()
+    if conf:
+        conf.invite_participants()
 
 
 if __name__ == '__main__':
