@@ -53,6 +53,10 @@ ASTERISK_SPOOL_DIR = '/var/spool/asterisk/outgoing/'
 ASTERISK_MONITOR_DIR = '/var/spool/asterisk/monitor/'
 ASTERISK_EXECUTABLE = '/usr/sbin/asterisk'
 
+# This defines the order of tabs. You can also remove any tab from this list to hide it.
+TABS = ['conferences', 'plans', 'participants', 'contacts', 'recordings',
+        'participant_profiles', 'conference_profiles']
+
 # Callout template.
 CALLOUT_TEMPLATE = """Channel: Local/%(number)s@confman-dialout
 Context: confman-bridge

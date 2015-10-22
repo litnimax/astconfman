@@ -433,7 +433,7 @@ http://www.thegeekstuff.com/2009/06/15-practical-crontab-examples/
         print __name__, dirname(__file__), join(dirname(__file__), 'cron_job.sh %s')
         for conference_schedule in ConferenceSchedule.query.all():
             job = flask_cron.new(command=join(dirname(__file__),
-                        'cron_job.sh %s' % conference_schedule.conference.id),
+                        'cron_job.sh %s' % conference_schedule.conference.number),
                         comment='%s' % conference_schedule.conference)
             job.setall(conference_schedule.entry)
         flask_cron.write_to_user()
@@ -587,7 +587,6 @@ class MyAdminIndexView(AdminIndexView):
         if not self.is_accessible():
             return authenticate()
 
-
 admin = Admin(
     app,
     name=app.config['BRAND_NAV'],
@@ -603,77 +602,74 @@ admin = Admin(
 )
 
 
-admin.add_view(ConferenceAdmin(
-    Conference,
-    db.session,
-    name=_('Conferences'),
-    menu_icon_type='glyph',
-    menu_icon_value='glyphicon-bullhorn'
-    )
-)
 
-admin.add_view(ConferenceScheduleAdmin(
-    ConferenceSchedule,
-    db.session,
-    endpoint='conference_schedule',
-    name=_('Plan'),
-    menu_icon_type='glyph',
-    menu_icon_value='glyphicon-calendar',
-    )
-)
+# This is a dict with views that will be added according to settings
+admin_views = {
+    'conferences': ConferenceAdmin(
+        Conference,
+        db.session,
+        name=_('Conferences'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-bullhorn'
+        ),
+    'plans': ConferenceScheduleAdmin(
+        ConferenceSchedule,
+        db.session,
+        endpoint='conference_schedule',
+        name=_('Plan'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-calendar',
+        ),
+    'participants': ParticipantAdmin(
+        Participant,
+        db.session,
+        name=_('Participants'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-user'
+        ),
+    'contacts': ContactAdmin(
+        Contact,
+        db.session,
+        name=_('Contacts'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-book'
+        ),
+    'recordings': RecordingAdmin(
+        app.config['ASTERISK_MONITOR_DIR'],
+        '/static/recording/',
+        endpoint='recording',
+        name=_('Recordings'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-hdd'
+        ),
+    'participant_profiles': ParticipantProfileAdmin(
+        ParticipantProfile,
+        db.session,
+        category=_('Profiles'),
+        endpoint='participant_profile',
+        url='/profile/participant/',
+        name=_('Participant'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-user'
+        ),
+    'conference_profiles': ConferenceProfileAdmin(
+        ConferenceProfile,
+        db.session,
+        category=_('Profiles'),
+        endpoint='room_profile',
+        url='/profile/room/',
+        name=_('Conference'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-bullhorn',
+        )
+}
+
+for tab in app.config['TABS']:
+    if admin_views.has_key(tab):
+        admin.add_view(admin_views[tab])
 
 
-admin.add_view(ParticipantAdmin(
-    Participant,
-    db.session,
-    name=_('Participants'),
-    menu_icon_type='glyph',
-    menu_icon_value='glyphicon-user'
-    )
-)
 
-admin.add_view(ContactAdmin(
-    Contact,
-    db.session,
-    name=_('Contacts'),
-    menu_icon_type='glyph',
-    menu_icon_value='glyphicon-book'
-    )
-)
-
-admin.add_view(RecordingAdmin(
-    app.config['ASTERISK_MONITOR_DIR'],
-    '/static/recording/',
-    endpoint='recording',
-    name=_('Recordings'),
-    menu_icon_type='glyph',
-    menu_icon_value='glyphicon-hdd'
-    )
-)
-
-admin.add_view(ParticipantProfileAdmin(
-    ParticipantProfile,
-    db.session,
-    category=_('Profiles'),
-    endpoint='participant_profile',
-    url='/profile/participant/',
-    name=_('Participant'),
-    menu_icon_type='glyph',
-    menu_icon_value='glyphicon-user'
-    )
-)
-
-admin.add_view(ConferenceProfileAdmin(
-    ConferenceProfile,
-    db.session,
-    category=_('Profiles'),
-    endpoint='room_profile',
-    url='/profile/room/',
-    name=_('Conference'),
-    menu_icon_type='glyph',
-    menu_icon_value='glyphicon-bullhorn',
-    )
-)
 
 ### ASTERISK VIEWS
 asterisk = Blueprint('asterisk', __name__)
