@@ -15,7 +15,7 @@ from wtforms.validators import Required, ValidationError
 from models import Contact, Conference, ConferenceLog, Participant
 from models import ConferenceProfile, ParticipantProfile, ConferenceSchedule
 from utils.validators import is_number, is_participant_uniq, is_crontab_valid
-from app import app, db, socketio
+from app import app, db, sse_notify
 from forms import ContactImportForm, ConferenceForm
 from asterisk import *
 
@@ -293,9 +293,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
             msg = gettext('All participants have been kicked from the conference.')
             conf.log(msg)
             flash(msg)
-        socketio.emit('update_participants', {
-            'room': 'conference-%s' % conf.id
-        })
+        sse_notify(conf.id, 'update_participants')
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf.id))
 
@@ -316,9 +314,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
             msg = gettext('Conference muted.')
             flash(msg)
             conf.log(msg)
-        socketio.emit('update_participants', {
-            'room': 'conference-%s' % conf.id
-        })
+        sse_notify(conf.id, 'update_participants')
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf_id))
 
@@ -339,9 +335,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
             msg = gettext('Conference unmuted.')
             flash(msg)
             conf.log(msg)
-        socketio.emit('update_participants', {
-            'room': 'conference-%s' % conf.id
-        })
+        sse_notify(conf.id, 'update_participants')
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf_id))
 
@@ -373,9 +367,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         msg = gettext('The conference has been locked.')
         flash(msg)
         conf.log(msg)
-        socketio.emit('update_participants', {
-            'room': 'conference-%s' % conf.id
-        })
+        sse_notify(conf.id, 'update_participants')
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf_id))
 
@@ -387,9 +379,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         msg = gettext('The conference has been unlocked.')
         flash(msg)
         conf.log(msg)
-        socketio.emit('update_participants', {
-            'room': 'conference-%s' % conf.id
-        })
+        sse_notify(conf.id, 'update_participants')
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf_id))
 
@@ -430,7 +420,6 @@ http://www.thegeekstuff.com/2009/06/15-practical-crontab-examples/
     def install(self):
         flask_cron = CronTab(user=True)
         flask_cron.remove_all()
-        print __name__, dirname(__file__), join(dirname(__file__), 'cron_job.sh %s')
         for conference_schedule in ConferenceSchedule.query.all():
             job = flask_cron.new(command=join(dirname(__file__),
                         'cron_job.sh %s' % conference_schedule.conference.number),
@@ -767,9 +756,7 @@ def enter_conference(conf_number, callerid):
     message = gettext('Number %(num)s has entered the conference.', num=callerid)
     conference = Conference.query.filter_by(number=conf_number).first_or_404()
     conference.log(message)
-    socketio.emit('update_participants', {
-        'room': 'conference-%s' % conference.id
-    })
+    sse_notify(conference.id, 'update_participants')
     return 'OK'
 
 @asterisk.route('/leave_conference/<int:conf_number>/<callerid>')
@@ -779,9 +766,7 @@ def leave_conference(conf_number, callerid):
     message = gettext('Number %(num)s has left the conference.', num=callerid)
     conference = Conference.query.filter_by(number=conf_number).first_or_404()
     conference.log(message)
-    socketio.emit('update_participants', {
-        'room': 'conference-%s' % conference.id
-    })
+    sse_notify(conference.id, 'update_participants')
     return 'OK'
 
 
@@ -792,10 +777,7 @@ def unmute_request(conf_number, callerid):
     message = gettext('Unmute request from number %(num)s.', num=callerid)
     conference = Conference.query.filter_by(number=conf_number).first_or_404()
     conference.log(message)
-    socketio.emit('unmute_request', {
-        'data': callerid,
-        'room': 'conference-%s' % conference.id
-    })
+    sse_notify(conference.id, 'unmute_request', callerid)
     return 'OK'
 
 

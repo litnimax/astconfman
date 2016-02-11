@@ -1,13 +1,12 @@
 from os.path import dirname, join
 from datetime import datetime
 from flask.ext.babelex import gettext, lazy_gettext
-from flask.ext.socketio import emit
 from datetime import datetime
 from sqlalchemy.ext.hybrid import hybrid_property
 from flask.ext.sqlalchemy import before_models_committed
 import asterisk
 from crontab import CronTab
-from app import app, db, socketio
+from app import app, db, sse_notify
 
 
 
@@ -65,10 +64,8 @@ class Conference(db.Model):
         post = ConferenceLog(conference=self, message=message)
         db.session.add(post)
         db.session.commit()
-        socketio.emit('log_message', {
-            'data': message,
-            'room': 'conference-%s' % self.id
-        })
+        sse_notify(self.id, 'log_message', message)
+
 
     def invite_participants(self):
         online_participants = [

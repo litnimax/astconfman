@@ -6,22 +6,17 @@ from flask.ext.babelex import gettext
 from transliterate import translit
 from app import app
 
-"""
-def _get_version():
-    version = app.config.get('ASTERISK_VERSION', None)
-    if not version:
-        raise Exception('You must set ASTERISK_VERSION in your config.py')
-    try:
-        a,b,c = version.split('.')
-        formatted = '%02.f%02.f%02.f' % (float(a),float(b),float(c))
-        return formatted
-    except (IndexError, ValueError):
-        raise Exception('You must set the correct Asterisk version number like 13.2.0')
-"""
+config = app.config
+
 
 def _cli_command(cmd):
-    status, output = commands.getstatusoutput(
-        "%s -rx '%s'" % (app.config['ASTERISK_EXECUTABLE'], cmd))
+    shell_cmd = "%s -rx '%s'" % (config['ASTERISK_EXECUTABLE'], cmd)
+    if config['ASTERISK_SSH_ENABLED']:
+        shell_cmd = 'ssh -p%s %s@%s "%s"' % (config['ASTERISK_SSH_PORT'],
+                                             config['ASTERISK_SSH_USER'],
+                                             config['ASTERISK_SSH_HOST'],
+                                             shell_cmd)
+    status, output = commands.getstatusoutput(shell_cmd)
     if status != 0:
         raise Exception(output)
     return output
@@ -90,7 +85,7 @@ def confbridge_list_participants(confno):
 def originate(confnum, number, name='', bridge_options=[], user_options=[]):
     tempname = tempfile.mktemp()
     f = open(tempname, mode='w')
-    f.write(app.config['CALLOUT_TEMPLATE'] % {'number': number,
+    f.write(config['CALLOUT_TEMPLATE'] % {'number': number,
                                               'name': translit(name, 'ru',
                                                                reversed=True),
                                               'confnum': confnum})
@@ -105,15 +100,28 @@ def originate(confnum, number, name='', bridge_options=[], user_options=[]):
 
     f.flush()
     f.close()
-    # Move it to Asterisk outgoing calls queue.
-    try:
-        shutil.move(tempname, os.path.join(
-            app.config['ASTERISK_SPOOL_DIR'],
-                    '%s.%s' % (confnum, number)))
-        raise OSError
-    except OSError:
-        # This happends that Asterisk immediately deleted call file
-        pass
+    if config['ASTERISK_SSH_ENABLED']:
+        ssh_cmd_prefix = 'ssh -p%s %s@%s "%%s"' % (config['ASTERISK_SSH_PORT'],
+                                             config['ASTERISK_SSH_USER'],
+                                             config['ASTERISK_SSH_HOST'])
+        scp_cmd_prefix = 'scp -P%s %%s %s@%s:%%s' % (config['ASTERISK_SSH_PORT'],
+                                             config['ASTERISK_SSH_USER'],
+                                             config['ASTERISK_SSH_HOST'])
+        remote_tmp_file = commands.getoutput(ssh_cmd_prefix % 'mktemp')
+        scp_tmp_file = commands.getoutput(scp_cmd_prefix % (tempname,
+                                                            remote_tmp_file))
+        commands.getoutput(ssh_cmd_prefix % 'mv %s %s' % (remote_tmp_file,
+                                                config['ASTERISK_SPOOL_DIR']))
+    else:
+        # Move it to Asterisk outgoing calls queue.
+        try:
+            shutil.move(tempname, os.path.join(
+                config['ASTERISK_SPOOL_DIR'],
+                        '%s.%s' % (confnum, number)))
+            raise OSError
+        except OSError:
+            # This happends that Asterisk immediately deleted call file
+            pass
 
 
 def confbridge_get(confno):

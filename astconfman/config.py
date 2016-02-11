@@ -52,6 +52,11 @@ WTF_CSRF_ENABLED = True
 ASTERISK_SPOOL_DIR = '/var/spool/asterisk/outgoing/'
 ASTERISK_MONITOR_DIR = '/var/spool/asterisk/monitor/'
 ASTERISK_EXECUTABLE = '/usr/sbin/asterisk'
+ASTERISK_SSH_ENABLED = False
+ASTERISK_SSH_PORT = '22'
+ASTERISK_SSH_HOST = 'localhost'
+ASTERISK_SSH_USER = 'asterisk'
+ASTERISK_SSH_KEY = 'ssh-rsa AAAAB3NzaC1yc2EA...' # Put your key in instance config
 
 # This defines the order of tabs. You can also remove any tab from this list to hide it.
 TABS = ['conferences', 'plans', 'participants', 'contacts', 'recordings',
