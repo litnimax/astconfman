@@ -213,7 +213,6 @@ class ConferenceAdmin(MyModelView, AuthBaseView):
 
     column_list = ['number', 'name', 'is_public', 'is_locked',
                    'participant_count', 'invited_participant_count', 'user']
-    inline_models = (Participant,)
     column_labels = {
         'number': _('Conference Number'),
         'name': _('Conference Name'),
@@ -224,7 +223,6 @@ class ConferenceAdmin(MyModelView, AuthBaseView):
         'is_public': _('Public'),
         'conference_profile': _('Conference Profile'),
         'public_participant_profile': _('Public Participant Profile'),
-        'participants': _('Participants'),
     }
 
     form_create_rules = form_edit_rules = [
@@ -237,7 +235,7 @@ class ConferenceAdmin(MyModelView, AuthBaseView):
             _('Open Access')
         ),
         rules.FieldSet(
-            (rules.Macro('conference_participants_link'), 'participants'),             
+            (rules.Macro('conference_participants_link'),),
             _('Participants')
         ),
     ]
@@ -456,7 +454,7 @@ class ConferenceUser(UserModelView, ConferenceAdmin):
             _('Open Access')
         ),
         rules.FieldSet(
-            (rules.Macro('conference_participants_link'), 'participants'),
+            (rules.Macro('conference_participants_link'),),
             _('Participants')
         ),
     ]
