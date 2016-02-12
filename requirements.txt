@@ -5,7 +5,6 @@ Flask-BabelEx
 Flask-SQLAlchemy
 Flask-WTF
 Flask-Script
-Flask-SocketIO==1.0a1
 Flask-Migrate
 Jinja2
 MarkupSafe
@@ -14,9 +13,6 @@ WTForms
 Werkzeug
 blinker
 gevent
-gevent-socketio
-gevent-websocket
-greenlet
 transliterate
 itsdangerous
 python-crontab
