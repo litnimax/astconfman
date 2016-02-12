@@ -1,17 +1,14 @@
 {% extends 'admin/master.html' %}
- 
+
 {% block body %}
 {% if config['BRAND_LOGO'] %}
     <div class="row">
         <div class="well well-sm">
             <a href="{{ config['BRAND_LOGO_URL'] }}">
-                <img class="img-responsive" src="{{ config['BRAND_LOGO']}}"/>
+            <img class="img-responsive" src="{{ config['BRAND_LOGO']}}"/>
             </a>
         </div>
     </div>
 {% endif %}
-<hr/>
-<div class="row">
-        <footer class="text-center"> {{ config['BRAND_FOOTER'] | safe }} </footer>
-</div>
+
 {% endblock %}

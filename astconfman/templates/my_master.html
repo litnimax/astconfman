@@ -7,16 +7,34 @@
 
 {% block access_control %}
 
-<div class="navbar-text pull-right">   
-    <div class="dropdown"> 
-    <a href="#" class="navbar-link dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-        <i class="glyphicon glyphicon-globe"></i> {{_('Language')}}
-        <span class="caret"></span></a>
-        <ul class="dropdown-menu" role="menu">
-            <li><a href="{{ request | append_to_query('lang','en') }}"><span class="lang-sm lang-lbl" lang="en"></span></a></li>
-            <li><a href="{{ request | append_to_query('lang','ru') }}"><span class="lang-sm lang-lbl" lang="ru"></span></a></li>
-        </ul>    
-    </div>
-</div>
+<div class="navbar-text btn-group pull-right">
+    {% if current_user.is_authenticated %}
+        <a href="{{ url_for('security.logout') }}">
+            <span class="glyphicon glyphicon-log-out"></span> {{_('Logout')}}
+        </a> &nbsp;
+    {% else %}
+        <a href="{{ url_for('security.login') }}">
+            <span class="glyphicon glyphicon-log-in"></span> {{_('Login')}}
+        </a> &nbsp;
+    {% endif %}
+    <a href="#" class="navbar-link dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"> 
+        <i class="glyphicon glyphicon-globe"></i> {{_('Language')}} <span class="caret"></span>
+    </a> 
+    <ul class="dropdown-menu" role="menu"> 
+        <li><a href="{{ request | append_to_query('lang','en') }}">
+            <span class="lang-sm lang-lbl" lang="en"></span>
+        </a></li>
+         <li><a href="{{ request | append_to_query('lang','ru') }}">
+            <span class="lang-sm lang-lbl" lang="ru"></span>
+        </a></li> 
+    </ul> 
 
+</div>
+{% endblock %}
+
+{% block tail %}
+<hr/>
+<div class="row">
+        <footer class="text-center"> {{ config['BRAND_FOOTER'] | safe }} </footer>
+</div>
 {% endblock %}

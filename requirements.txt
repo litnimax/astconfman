@@ -1,11 +1,12 @@
 Babel
 Flask
-https://github.com/flask-admin/flask-admin/archive/master.zip
+flask-admin==1.3.0
 Flask-BabelEx
 Flask-SQLAlchemy
 Flask-WTF
 Flask-Script
 Flask-Migrate
+Flask-Security
 Jinja2
 MarkupSafe
 SQLAlchemy

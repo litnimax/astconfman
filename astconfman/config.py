@@ -17,15 +17,6 @@ BRAND_LOGO = 'static/logo.png'
 # URL to redirect when clicked on LOGO. Put here '#' if redirect is not required.
 BRAND_LOGO_URL = 'http://www.pbxware.ru/'
 
-# 
-ADMINS = {
-    'admin': {
-        'password': 'test',
-        'email': '',
-    },
-
-}
-
 # ASTERISK_IPADDR - IP Address of Asterisk server. All other requests will be denied.
 ASTERISK_IPADDR = '127.0.0.1'
 
@@ -48,6 +39,11 @@ SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DATABASE_FILE
 
 WTF_CSRF_ENABLED = True
 
+SECURITY_REGISTERABLE = False
+SECURITY_RECOVERABLE = False
+SECURITY_SEND_PASSWORD_CHANGE_EMAIL = False
+SECURITY_USER_IDENTITY_ATTRIBUTES = 'username'
+
 # Asterisk
 ASTERISK_SPOOL_DIR = '/var/spool/asterisk/outgoing/'
 ASTERISK_MONITOR_DIR = '/var/spool/asterisk/monitor/'
@@ -58,9 +54,8 @@ ASTERISK_SSH_HOST = 'localhost'
 ASTERISK_SSH_USER = 'asterisk'
 ASTERISK_SSH_KEY = 'ssh-rsa AAAAB3NzaC1yc2EA...' # Put your key in instance config
 
-# This defines the order of tabs. You can also remove any tab from this list to hide it.
-TABS = ['conferences', 'plans', 'participants', 'contacts', 'recordings',
-        'participant_profiles', 'conference_profiles']
+# You can remove any tab by adding it here.
+DISABLED_TABS = []
 
 # Callout template.
 CALLOUT_TEMPLATE = """Channel: Local/%(number)s@confman-dialout

@@ -83,7 +83,7 @@
                     <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                         {{_('Manage Conference')}} {{ model }}
                         <span class="caret"></span>
-                    {% if confbridge.locked %}  <span class='glyphicon glyphicon-lock'></span> {% endif %} </button> 
+                    {% if confbridge.locked %}  <span class='glyphicon glyphicon-lock'></span> {% endif %} </button>
                     <ul class="dropdown-menu" aria-labelledby="dropdownMenu">
                         <li><a href="{{ url_for('.invite_participants', conf_id=model.id) }}"><span class='glyphicon glyphicon-phone-alt'></span> {{ _('Invite All Participants') }}</a></li>                                        
                         <li>

@@ -15,6 +15,8 @@ class Contact(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Unicode(128), index=True)
     phone = db.Column(db.String(32))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='contacts')
 
     def __unicode__(self):
         if self.name:
@@ -36,6 +38,9 @@ class Conference(db.Model):
         db.Integer,
         db.ForeignKey('participant_profile.id'))
     public_participant_profile = db.relationship('ParticipantProfile')
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='conferences')
+
 
     def __str__(self):
         return '%s <%s>' % (self.name, self.number)
@@ -103,6 +108,9 @@ class Participant(db.Model):
                                      #cascade="delete,delete-orphan"))
     profile_id = db.Column(db.Integer, db.ForeignKey('participant_profile.id'))
     profile = db.relationship('ParticipantProfile')
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='participants')
+
     __table_args__ = (db.UniqueConstraint('conference_id', 'phone',
                                           name='uniq_phone'),)
 
@@ -121,6 +129,8 @@ class ConferenceProfile(db.Model):
     internal_sample_rate = db.Column(db.String(8))
     mixing_interval = db.Column(db.String(2), default='20')
     video_mode = db.Column(db.String(16))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='conference_profiles')
 
     def __str__(self):
         return self.name
@@ -166,6 +176,8 @@ class ParticipantProfile(db.Model):
     pin = db.Column(db.String, index=True)
     announce_join_leave = db.Column(db.Boolean)
     dtmf_passthrough = db.Column(db.Boolean)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='participant_profiles')
 
     def __str__(self):
         return self.name
@@ -229,6 +241,8 @@ class ConferenceSchedule(db.Model):
     conference_id = db.Column(db.Integer, db.ForeignKey('conference.id'))
     conference = db.relationship('Conference')
     entry = db.Column(db.String(256))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='schedules')
     # May be will refactor :-)
     #minute = db.Column(db.String(64))
     #hour = db.Column(db.String(64))

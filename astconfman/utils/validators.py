@@ -11,6 +11,7 @@ def is_number(form, field):
 
 
 def is_participant_uniq(form, field):
+    #
     p = Participant.query.filter_by(conference=form.data['conference'],
                                     phone=form.data['phone']).first()
     if p:
