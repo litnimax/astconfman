@@ -19,6 +19,16 @@ def create_schema():
 
 
 @manager.command
+def create_admin_admin():
+    user_datastore.create_role(name='admin', description='System administrator')
+    user_datastore.create_role(name='user', description='Conference user')
+    admin = user_datastore.create_user(username='admin',
+                               password=utils.encrypt_password('admin'))
+    user_datastore.add_role_to_user(admin, 'admin')
+    db.session.commit()
+
+
+@manager.command
 def init():
     db.drop_all()
     db.create_all()
