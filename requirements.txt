@@ -2,6 +2,7 @@ Babel
 Flask
 flask-admin==1.3.0
 Flask-BabelEx
+Flask-Bootstrap
 Flask-SQLAlchemy
 Flask-WTF
 Flask-Script
