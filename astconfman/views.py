@@ -13,6 +13,7 @@ from flask.ext.admin.contrib.fileadmin import FileAdmin
 from flask.ext.admin.form import rules
 from flask.ext.babelex import lazy_gettext as _, gettext
 from flask.ext.security import current_user
+from flask.ext.security.utils import encrypt_password
 from jinja2 import Markup
 from wtforms.fields import PasswordField
 from wtforms.validators import Required, ValidationError
@@ -680,7 +681,7 @@ class UserAdmin(ModelView, AuthBaseView):
 
     def on_model_change(self, form, model, is_created):
         if len(model.password2):
-            model.password = utils.encrypt_password(model.password2)
+            model.password = encrypt_password(model.password2)
 
 
 class RoleAdmin(ModelView, AuthBaseView):
