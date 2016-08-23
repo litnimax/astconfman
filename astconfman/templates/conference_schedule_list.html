@@ -1,0 +1,8 @@
+{% extends "admin/model/list.html" %}
+
+{% block model_menu_bar %}
+<div class="pull-right">
+    <a href="{{ url_for('.install') }}"><button class="btn-success btn-sm">{% trans %}Install the Schedule{% endtrans %}</button></a>
+</div>
+{{ super() }}
+{% endblock %}

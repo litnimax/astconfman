@@ -1,16 +1,22 @@
+from os.path import dirname, join
 from datetime import datetime
 from flask.ext.babelex import gettext, lazy_gettext
-from flask.ext.socketio import emit
 from datetime import datetime
 from sqlalchemy.ext.hybrid import hybrid_property
+from flask.ext.sqlalchemy import before_models_committed
 import asterisk
-from app import db, socketio
+from crontab import CronTab
+from app import app, db, sse_notify
+
+
 
 
 class Contact(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Unicode(128), index=True)
     phone = db.Column(db.String(32))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='contacts')
 
     def __unicode__(self):
         if self.name:
@@ -32,8 +38,11 @@ class Conference(db.Model):
         db.Integer,
         db.ForeignKey('participant_profile.id'))
     public_participant_profile = db.relationship('ParticipantProfile')
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='conferences')
 
-    def __unicode__(self):
+
+    def __str__(self):
         return '%s <%s>' % (self.name, self.number)
 
 
@@ -60,11 +69,20 @@ class Conference(db.Model):
         post = ConferenceLog(conference=self, message=message)
         db.session.add(post)
         db.session.commit()
-        socketio.emit('log_message', {
-            'data': message,
-            'room': 'conference-%s' % self.id
-        })
+        sse_notify(self.id, 'log_message', message)
 
+
+    def invite_participants(self):
+        online_participants = [
+            k['callerid'] for k in asterisk.confbridge_list_participants(
+                                                                self.number)]
+        gen = (p for p in self.participants if p.is_invited and p.phone \
+               not in online_participants)
+        for p in gen:
+                asterisk.originate(self.number, p.phone, name=p.name,
+            bridge_options=self.conference_profile.get_confbridge_options(),
+            user_options=p.profile.get_confbridge_options()
+            )
 
 
 class ConferenceLog(db.Model):
@@ -74,7 +92,7 @@ class ConferenceLog(db.Model):
     conference_id = db.Column(db.Integer, db.ForeignKey('conference.id'))
     conference = db.relationship('Conference', backref='logs')
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s: %s' % (self.added, self.message)
 
 
@@ -90,10 +108,13 @@ class Participant(db.Model):
                                      #cascade="delete,delete-orphan"))
     profile_id = db.Column(db.Integer, db.ForeignKey('participant_profile.id'))
     profile = db.relationship('ParticipantProfile')
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='participants')
+
     __table_args__ = (db.UniqueConstraint('conference_id', 'phone',
                                           name='uniq_phone'),)
 
-    def __unicode__(self):
+    def __str__(self):
         if self.name:
             return '%s <%s>' % (self.name, self.phone)
         else:
@@ -108,8 +129,10 @@ class ConferenceProfile(db.Model):
     internal_sample_rate = db.Column(db.String(8))
     mixing_interval = db.Column(db.String(2), default='20')
     video_mode = db.Column(db.String(16))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='conference_profiles')
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def get_confbridge_options(self):
@@ -153,8 +176,10 @@ class ParticipantProfile(db.Model):
     pin = db.Column(db.String, index=True)
     announce_join_leave = db.Column(db.Boolean)
     dtmf_passthrough = db.Column(db.Boolean)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='participant_profiles')
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def get_confbridge_options(self):
@@ -206,3 +231,24 @@ class ParticipantProfile(db.Model):
             options.append('dtmf_passthrough=yes')
 
         return options
+
+
+class ConferenceSchedule(db.Model):
+    """
+    This is a model to keep planned conferences in crontab format.
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    conference_id = db.Column(db.Integer, db.ForeignKey('conference.id'))
+    conference = db.relationship('Conference')
+    entry = db.Column(db.String(256))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', backref='schedules')
+    # May be will refactor :-)
+    #minute = db.Column(db.String(64))
+    #hour = db.Column(db.String(64))
+    #day_of_month = db.Column(db.String(64))
+    #month = db.Column(db.String(64))
+    #day_of_week = db.Column(db.String(64))
+
+    def __str__(self):
+        return self.entry

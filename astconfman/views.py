@@ -1,56 +1,63 @@
 import json
 import time
+from os.path import dirname, join
+from crontab import CronTab
 from flask import request, render_template, Response, redirect, url_for
 from flask import Blueprint, flash, abort, jsonify
 from flask.ext.admin import  Admin, AdminIndexView, BaseView, expose
+from flask.ext.admin.contrib.sqla.ajax import QueryAjaxModelLoader
+from flask_admin import helpers as admin_helpers
 from flask.ext.admin.actions import action
 from flask.ext.admin.contrib.sqla import ModelView, filters
 from flask.ext.admin.contrib.fileadmin import FileAdmin
 from flask.ext.admin.form import rules
 from flask.ext.babelex import lazy_gettext as _, gettext
+from flask.ext.security import current_user
+from flask.ext.security.utils import encrypt_password
 from jinja2 import Markup
+from wtforms.fields import PasswordField
 from wtforms.validators import Required, ValidationError
 from models import Contact, Conference, ConferenceLog, Participant
-from models import ConferenceProfile, ParticipantProfile
-from utils.validators import is_number, is_participant_uniq
-from app import app, db, socketio
+from models import ConferenceProfile, ParticipantProfile, ConferenceSchedule
+from utils.validators import is_number, is_participant_uniq, is_crontab_valid
+from app import app, db, security, sse_notify, User, Role
 from forms import ContactImportForm, ConferenceForm
 from asterisk import *
 
 
-def check_auth(username, password):
-    if username in app.config['ADMINS'].keys() and \
-            app.config['ADMINS'][username]['password'] == password:
-        return True
-    else:
-        return False
-
-
-def authenticate():
-    return Response(
-            _(
-                'Could not verify your access level for that URL.\n'
-                'You have to login with proper credentials'
-            ),
-            401,
-            {
-                'WWW-Authenticate': u'Basic realm="Login Required"'
-            }
-        )
-
-
-def is_authenticated():
-    auth = request.authorization
-    return auth and check_auth(auth.username, auth.password)
-
 
 class AuthBaseView(BaseView):
     def is_accessible(self):
-        return is_authenticated()
+        if not current_user.is_active  or not current_user.is_authenticated:
+            return False
+        return True
 
-    def _handle_view(self, name, *args, **kwargs):
+    def _handle_view(self, name, **kwargs):
         if not self.is_accessible():
-            return authenticate()
+            if current_user.is_authenticated:
+                abort(403)
+            else:
+                return redirect(url_for('security.login', next=request.url))
+
+
+class MyModelView(ModelView):
+    def on_model_change(self, form, model, is_created):
+        if is_created:
+            model.user = current_user
+
+
+class UserModelView(ModelView):
+    def is_accessible(self):
+        return super(AuthBaseView, self).is_accessible() and current_user.has_role('user') or False
+
+    def get_query(self):
+        return super(UserModelView, self).get_query().filter_by(user = current_user)
+
+    def get_query_count(self):
+        return self.get_query().count()
+
+    def get_one(self, id):
+        return super(UserModelView, self).get_query().filter_by(user=current_user,id=id).first()
 
 
 def legend_formatter(view, context, model, name):
@@ -84,17 +91,19 @@ def legend_formatter(view, context, model, name):
 
 
 
-class ContactAdmin(ModelView, AuthBaseView):
-    column_list = ['phone', 'name']
-    form_columns = ['phone', 'name']
+class ContactAdmin(MyModelView, AuthBaseView):
+    column_list = ['phone', 'name', 'user']
+    form_columns = ['phone', 'name', 'user']
     create_template = 'contact_create.html'
     column_searchable_list = ['phone', 'name']
+    column_filters = ['user']
     form_args = {
         'phone': dict(validators=[Required(), is_number])
     }
     column_labels = {
         'phone': _('Phone'),
         'name': _('Name'),
+        'user': _('User')
     }
 
     @action('conference', _('Add to Conference'))
@@ -119,6 +128,7 @@ class ContactAdmin(ModelView, AuthBaseView):
                     c = Contact()
                     c.phone = line[0]
                     c.name = line[1].decode('utf-8')
+                    c.user = current_user
                     db.session.add(c)
                     imported += 1
                 db.session.commit()
@@ -128,18 +138,34 @@ class ContactAdmin(ModelView, AuthBaseView):
             else:
                 return self.render('contact_import.html', form=form)
 
+    def is_accessible(self):
+        return super(ContactAdmin, self).is_accessible() and current_user.has_role('admin') or False
 
 
 
-class ParticipantAdmin(ModelView, AuthBaseView):
+class ContactUser(UserModelView, ContactAdmin):
+    column_list = ['phone', 'name']
+    form_columns = ['phone', 'name']
+
+    @action('conference', _('Add to Conference'))
+    def action_conference(self, ids):
+        return render_template('action_conference.html', ids=ids,
+                               conferences=Conference.query.filter_by(
+                                   user=current_user),
+                               profiles=ParticipantProfile.query.all())
+
+
+
+class ParticipantAdmin(MyModelView, AuthBaseView):
     column_searchable_list = ('phone', 'name')
-    column_filters = ['conference', 'profile']
+    column_filters = ['conference', 'profile', 'user']
     column_formatters = {
         'legend': lambda v,c,m,n: legend_formatter(v,c,m,n)
     }
-    column_list = ['phone', 'name', 'is_invited', 'conference', 'profile']
+    column_list = form_columns = ['phone', 'name', 'is_invited', 'conference',
+                                  'profile', 'user']
     form_args = {
-        'phone': dict(validators=[Required(), is_number, is_participant_uniq]),
+        'phone': dict(validators=[Required(), is_number]),
         'conference': dict(validators=[Required()]),
         'profile': dict(validators=[Required()]),
     }
@@ -148,14 +174,35 @@ class ParticipantAdmin(ModelView, AuthBaseView):
         'name': _('Name'),
         'conference': _('Conference'),
         'profile': _('Participant Profile'),
-        'is_invited': _('Is invited on Invite All?')
+        'is_invited': _('Is invited on Invite All?'),
+        'user': _('User'),
     }
     column_descriptions = {
         'is_invited': _('When enabled this participant will be called on <i>Invite All</i> from <i>Manage Conference</i> menu.'),
     }
 
+    def is_accessible(self):
+        return super(AuthBaseView, self).is_accessible() and current_user.has_role('admin') or False
 
-class ConferenceAdmin(ModelView, AuthBaseView):
+
+class ConferenceQueryAjaxModelLoader(QueryAjaxModelLoader):
+    def get_list(self, term, offset=0, limit=10):
+        query = super(ConferenceQueryAjaxModelLoader, self).get_list(term,
+                                                offset=offset, limit=limit)
+        return [k for k in query if k.user==current_user]
+
+
+
+class ParticipantUser(UserModelView, ParticipantAdmin):
+    column_filters = ['conference', 'profile']
+    column_list = form_columns = ['phone', 'name', 'is_invited', 'conference',
+                                  'profile']
+    form_ajax_refs = {
+        'conference': ConferenceQueryAjaxModelLoader('conference', db.session, Conference, fields=['name'], page_size=10)
+    }
+
+
+class ConferenceAdmin(MyModelView, AuthBaseView):
     """
     This is active conference started in a room.
     """
@@ -166,8 +213,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     create_template = 'conference_create.html'
 
     column_list = ['number', 'name', 'is_public', 'is_locked',
-                   'participant_count', 'invited_participant_count']
-    inline_models = (Participant,)
+                   'participant_count', 'invited_participant_count', 'user']
     column_labels = {
         'number': _('Conference Number'),
         'name': _('Conference Name'),
@@ -178,7 +224,6 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         'is_public': _('Public'),
         'conference_profile': _('Conference Profile'),
         'public_participant_profile': _('Public Participant Profile'),
-        'participants': _('Participants'),
     }
 
     form_create_rules = form_edit_rules = [
@@ -187,11 +232,11 @@ class ConferenceAdmin(ModelView, AuthBaseView):
             _('Basic Settings')
         ),
         rules.FieldSet(
-            ('is_public', 'public_participant_profile'),
+            ('is_public', 'public_participant_profile', 'user'),
             _('Open Access')
         ),
         rules.FieldSet(
-            (rules.Macro('conference_participants_link'), 'participants'),             
+            (rules.Macro('conference_participants_link'),),
             _('Participants')
         ),
     ]
@@ -207,6 +252,9 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         'public_participant_profile': dict(validators=[Required()]),
     }
 
+    def is_accessible(self):
+        return super(AuthBaseView, self).is_accessible() and current_user.has_role('admin') or False
+
 
     @expose('/details/')
     def details_view(self):
@@ -214,7 +262,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         self._template_args['confbridge_participants'] = \
             confbridge_list_participants(conf.number)
         self._template_args['confbridge'] = confbridge_get(conf.number)
-        return super(ConferenceAdmin, self).details_view()
+        return super(ModelView, self).details_view()
 
 
     @expose('/contacts/', methods=['POST'])
@@ -223,8 +271,11 @@ class ConferenceAdmin(ModelView, AuthBaseView):
             if not request.form.get('conference') or not request.form.get(
                 'profile'):
                     flash(
-                        _('You must select Conference and Profile'))
-                    return redirect(url_for('contact.index_view'))
+                        'You must select Conference and Profile')
+                    if current_user.has_role('admin'):
+                        return redirect(url_for('contact_admin.index_view'))
+                    else:
+                        return redirect(url_for('contact_user.index_view'))
 
             conference = Conference.query.filter_by(
                 id=request.form['conference']).first_or_404()
@@ -241,7 +292,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
                     flash(gettext(
                         '%(contact)s is already there.', contact=c))
                     continue
-                p = Participant(phone=c.phone, name=c.name,
+                p = Participant(phone=c.phone, name=c.name, user=current_user,
                                 profile=profile, conference=conference)
                 flash(gettext(
                     '%(contact)s added.', contact=c))
@@ -269,15 +320,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
     @expose('/<int:conf_id>/invite_participants')
     def invite_participants(self, conf_id):
         conf = Conference.query.get_or_404(conf_id)
-        online_participants = [
-            k['callerid'] for k in confbridge_list_participants(conf.number)]
-        gen = (p for p in conf.participants if p.is_invited and p.phone not in online_participants)
-        for p in gen:
-                originate(conf.number, p.phone, name=p.name,
-            bridge_options=conf.conference_profile.get_confbridge_options(),
-            user_options=p.profile.get_confbridge_options()
-            )
-
+        conf.invite_participants()
         flash(gettext(
                 'All the participants where invited to the conference'))
         time.sleep(1)
@@ -299,9 +342,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
             msg = gettext('All participants have been kicked from the conference.')
             conf.log(msg)
             flash(msg)
-        socketio.emit('update_participants', {
-            'room': 'conference-%s' % conf.id
-        })
+        sse_notify(conf.id, 'update_participants')
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf.id))
 
@@ -322,9 +363,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
             msg = gettext('Conference muted.')
             flash(msg)
             conf.log(msg)
-        socketio.emit('update_participants', {
-            'room': 'conference-%s' % conf.id
-        })
+        sse_notify(conf.id, 'update_participants')
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf_id))
 
@@ -345,9 +384,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
             msg = gettext('Conference unmuted.')
             flash(msg)
             conf.log(msg)
-        socketio.emit('update_participants', {
-            'room': 'conference-%s' % conf.id
-        })
+        sse_notify(conf.id, 'update_participants')
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf_id))
 
@@ -379,9 +416,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         msg = gettext('The conference has been locked.')
         flash(msg)
         conf.log(msg)
-        socketio.emit('update_participants', {
-            'room': 'conference-%s' % conf.id
-        })
+        sse_notify(conf.id, 'update_participants')
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf_id))
 
@@ -393,9 +428,7 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         msg = gettext('The conference has been unlocked.')
         flash(msg)
         conf.log(msg)
-        socketio.emit('update_participants', {
-            'room': 'conference-%s' % conf.id
-        })
+        sse_notify(conf.id, 'update_participants')
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf_id))
 
@@ -409,6 +442,79 @@ class ConferenceAdmin(ModelView, AuthBaseView):
         return redirect(url_for('.details_view', id=conf_id))
 
 
+class ConferenceUser(UserModelView, ConferenceAdmin):
+    column_list = ['number', 'name', 'is_public', 'is_locked',
+                   'participant_count', 'invited_participant_count']
+    form_create_rules = form_edit_rules = [
+        rules.FieldSet(
+            ('number', 'name', 'conference_profile'),
+            _('Basic Settings')
+        ),
+        rules.FieldSet(
+            ('is_public', 'public_participant_profile'),
+            _('Open Access')
+        ),
+        rules.FieldSet(
+            (rules.Macro('conference_participants_link'),),
+            _('Participants')
+        ),
+    ]
+
+    @expose('/details/')
+    def details_view(self):
+        conf = Conference.query.get_or_404(request.args.get('id', 0))
+        self._template_args['confbridge_participants'] = \
+            confbridge_list_participants(conf.number)
+        self._template_args['confbridge'] = confbridge_get(conf.number)
+        return super(ModelView, self).details_view()
+
+
+
+class ConferenceScheduleAdmin(MyModelView, AuthBaseView):
+    list_template = 'conference_schedule_list.html'
+    column_list = form_columns = ['conference', 'entry', 'user']
+    column_labels = {
+        'entry': _('Entry'),
+        'conference': _('Conference'),
+    }
+    column_descriptions = {
+        'entry': _("""Format: Minute Hour Day-of-Month Month Day-of-Week. Examples: <br/>
+30 10 * * 1,2,3,4,5 - Every workday at 10:30 a.m. <br/>
+0 10 1 * * - Every 1-st day of every month at 10:00 a.m. <br/>
+See Linux Crontab: 15 Awesome Cron Job Examples - <br/>
+http://www.thegeekstuff.com/2009/06/15-practical-crontab-examples/
+"""),
+    }
+    form_args = {
+        'conference': {'validators': [Required()]},
+        'entry': {'validators': [Required(), is_crontab_valid]}
+    }
+
+    def is_accessible(self):
+        return super(AuthBaseView, self).is_accessible() and current_user.has_role('admin') or False
+
+
+    @expose('/install')
+    def install(self):
+        flask_cron = CronTab(user=True)
+        flask_cron.remove_all()
+        for conference_schedule in ConferenceSchedule.query.all():
+            job = flask_cron.new(command=join(dirname(__file__),
+                        'cron_job.sh %s' % conference_schedule.conference.number),
+                        comment='%s' % conference_schedule.conference)
+            job.setall(conference_schedule.entry)
+        flask_cron.write_to_user()
+        flash(gettext('Crontab has been installed successfully.'))
+        return redirect(url_for('.index_view'))
+
+
+class ConferenceScheduleUser(UserModelView, ConferenceScheduleAdmin):
+    column_list = form_columns = ['conference', 'entry']
+    form_ajax_refs = {
+        'conference': ConferenceQueryAjaxModelLoader('conference', db.session, Conference, fields=['name'], page_size=10)
+    }
+
+
 class RecordingAdmin(FileAdmin, AuthBaseView):
     can_upload = False
     can_download = True
@@ -416,6 +522,10 @@ class RecordingAdmin(FileAdmin, AuthBaseView):
     can_mkdir = False
     can_rename = True
     can_mkdir = False
+
+    def is_accessible(self):
+        return super(AuthBaseView, self).is_accessible() and current_user.has_role('admin') or False
+
 
 
 class ConferenceProfileAdmin(ModelView, AuthBaseView):
@@ -449,6 +559,10 @@ class ConferenceProfileAdmin(ModelView, AuthBaseView):
         'name': {'validators': [Required()]},
         'mixing_interval': {'validators': [Required()]},
     }
+
+    def is_accessible(self):
+        return super(AuthBaseView, self).is_accessible() and current_user.has_role('admin') or False
+
 
 
 class ParticipantProfileAdmin(ModelView, AuthBaseView):
@@ -546,15 +660,36 @@ The drop_silence option depends on this value to determine when the user's audio
 
     }
 
+    def is_accessible(self):
+        return super(AuthBaseView, self).is_accessible() and current_user.has_role('admin') or False
+
+
+
+class UserAdmin(ModelView, AuthBaseView):
+    column_exclude_list = ('password',)
+    form_excluded_columns = ('password',)
+    column_auto_select_related = True
+
+    def is_accessible(self):
+        return super(UserAdmin, self).is_accessible() and current_user.has_role('admin') or False
+
+
+    def scaffold_form(self):
+        form_class = super(UserAdmin, self).scaffold_form()
+        form_class.password2 = PasswordField(gettext('New Password'))
+        return form_class
+
+    def on_model_change(self, form, model, is_created):
+        if len(model.password2):
+            model.password = encrypt_password(model.password2)
+
+
+class RoleAdmin(ModelView, AuthBaseView):
+    def is_accessible(self):
+        return super(RoleAdmin, self).is_accessible() and current_user.has_role('admin') or False
 
 class MyAdminIndexView(AdminIndexView):
-    def is_accessible(self):
-        return is_authenticated()
-
-    def _handle_view(self, name, *args, **kwargs):
-        if not self.is_accessible():
-            return authenticate()
-
+    pass
 
 admin = Admin(
     app,
@@ -566,72 +701,158 @@ admin = Admin(
     base_template='my_master.html',
     template_mode='bootstrap3',
     category_icon_classes={
+        'Main': 'glyphicon glyphicon-wrench',
         'Profiles': 'glyphicon glyphicon-wrench',
+        'Users': 'glyphicon glyphicon-user',
+        'Participants': 'glyphicon glyphicon-book',
+        'Conferences': 'glyphicon glyphicon-bullhorn',
     }
 )
 
-
-admin.add_view(ConferenceAdmin(
-    Conference,
-    db.session,
-    name=_('Conferences'),
-    menu_icon_type='glyph',
-    menu_icon_value='glyphicon-bullhorn'
+@security.context_processor
+def security_context_processor():
+    return dict(
+        admin_base_template=admin.base_template,
+        admin_view=admin.index_view,
+        h=admin_helpers,
     )
-)
 
 
-admin.add_view(ParticipantAdmin(
-    Participant,
-    db.session,
-    name=_('Participants'),
-    menu_icon_type='glyph',
-    menu_icon_value='glyphicon-user'
-    )
-)
+# This is a dict with views that will be added according to settings
+admin_views = {
+    'conferences_admin': ConferenceAdmin(
+        Conference,
+        db.session,
+        endpoint='conference_admin',
+        url='/admin/conference',
+        category=_('Conferences'),
+        name=_('Conferences'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-bullhorn'
+        ),
+    'conferences_user': ConferenceUser(
+        Conference,
+        db.session,
+        endpoint='conference_user',
+        url='/user/conference',
+        category=_('Conferences'),
+        name=_('Conferences'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-bullhorn'
+        ),
+    'schedule_admin': ConferenceScheduleAdmin(
+        ConferenceSchedule,
+        db.session,
+        endpoint='conference_schedule_admin',
+        url='/admin/schedule',
+        category=_('Conferences'),
+        name=_('Plan'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-calendar',
+        ),
+    'schedule_user': ConferenceScheduleUser(
+        ConferenceSchedule,
+        db.session,
+        endpoint='conference_schedule_user',
+        url='/user/schedule',
+        category=_('Conferences'),
+        name=_('Plan'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-calendar',
+        ),
+    'participants_admin': ParticipantAdmin(
+        Participant,
+        db.session,
+        endpoint='participant_admin',
+        url='/admin/participants',
+        name=_('Participants'),
+        category=_('Participants'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-user'
+        ),
+    'participants_user': ParticipantUser(
+        Participant,
+        db.session,
+        endpoint='participant_user',
+        url='/user/participants',
+        name=_('Participants'),
+        category=_('Participants'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-user'
+        ),
+    'contacts_admin': ContactAdmin(
+        Contact,
+        db.session,
+        endpoint='contact_admin',
+        url='/admin/contacts',
+        name=_('Contacts'),
+        category=_('Participants'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-book'
+        ),
+    'contacts_user': ContactUser(
+        Contact,
+        db.session,
+        endpoint='contact_user',
+        url='/user/contacts',
+        name=_('Contacts'),
+        category=_('Participants'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-book'
+        ),
+    'recordings': RecordingAdmin(
+        app.config['ASTERISK_MONITOR_DIR'],
+        '/static/recording/',
+        endpoint='recording',
+        name=_('Recordings'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-hdd'
+        ),
+    'participant_profiles': ParticipantProfileAdmin(
+        ParticipantProfile,
+        db.session,
+        category=_('Profiles'),
+        endpoint='participant_profile',
+        url='/profile/participant',
+        name=_('Participant'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-user'
+        ),
+    'conference_profiles': ConferenceProfileAdmin(
+        ConferenceProfile,
+        db.session,
+        category=_('Profiles'),
+        endpoint='room_profile',
+        url='/profile/room',
+        name=_('Conference'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-bullhorn',
+        ),
+    'users': UserAdmin(
+        User, db.session, category=_('Users'),
+        endpoint='users',
+        url='/user',
+        name=_('Users'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-user'
+    ),
+    'roles': RoleAdmin(
+        Role, db.session, category=_('Users'),
+        endpoint='roles',
+        url='/role',
+        name=_('Roles'),
+        menu_icon_type='glyph',
+        menu_icon_value='glyphicon-queen'
+    ),
 
-admin.add_view(ContactAdmin(
-    Contact,
-    db.session,
-    name=_('Contacts'),
-    menu_icon_type='glyph',
-    menu_icon_value='glyphicon-book'
-    )
-)
+}
 
-admin.add_view(RecordingAdmin(
-    app.config['ASTERISK_MONITOR_DIR'],
-    '/static/recording/',
-    endpoint='recording',
-    name=_('Recordings'),
-    menu_icon_type='glyph',
-    menu_icon_value='glyphicon-hdd'
-    )
-)
+# Now add all views
+for v in admin_views.keys():
+    if v not in app.config['DISABLED_TABS']:
+        admin.add_view(admin_views[v])
 
-admin.add_view(ParticipantProfileAdmin(
-    ParticipantProfile,
-    db.session,
-    category=_('Profiles'),
-    endpoint='participant_profile',
-    url='/profile/participant/',
-    name=_('Participant'),
-    menu_icon_type='glyph',
-    menu_icon_value='glyphicon-user'
-    )
-)
 
-admin.add_view(ConferenceProfileAdmin(
-    ConferenceProfile,
-    db.session,
-    category=_('Profiles'),
-    endpoint='room_profile',
-    url='/profile/room/',
-    name=_('Conference'),
-    menu_icon_type='glyph',
-    menu_icon_value='glyphicon-bullhorn',
-    )
-)
 
 ### ASTERISK VIEWS
 asterisk = Blueprint('asterisk', __name__)
@@ -729,9 +950,7 @@ def enter_conference(conf_number, callerid):
     message = gettext('Number %(num)s has entered the conference.', num=callerid)
     conference = Conference.query.filter_by(number=conf_number).first_or_404()
     conference.log(message)
-    socketio.emit('update_participants', {
-        'room': 'conference-%s' % conference.id
-    })
+    sse_notify(conference.id, 'update_participants')
     return 'OK'
 
 @asterisk.route('/leave_conference/<int:conf_number>/<callerid>')
@@ -741,9 +960,7 @@ def leave_conference(conf_number, callerid):
     message = gettext('Number %(num)s has left the conference.', num=callerid)
     conference = Conference.query.filter_by(number=conf_number).first_or_404()
     conference.log(message)
-    socketio.emit('update_participants', {
-        'room': 'conference-%s' % conference.id
-    })
+    sse_notify(conference.id, 'update_participants')
     return 'OK'
 
 
@@ -754,10 +971,7 @@ def unmute_request(conf_number, callerid):
     message = gettext('Unmute request from number %(num)s.', num=callerid)
     conference = Conference.query.filter_by(number=conf_number).first_or_404()
     conference.log(message)
-    socketio.emit('unmute_request', {
-        'data': callerid,
-        'room': 'conference-%s' % conference.id
-    })
+    sse_notify(conference.id, 'unmute_request', callerid)
     return 'OK'
 
 

@@ -40,6 +40,16 @@ Here is the demo with the folling scenatio:
 [![Demo](http://img.youtube.com/vi/R1EV4D8cFj8/0.jpg)](https://youtu.be/R1EV4D8cFj8 "Demo")
 
 ### Installation
+#### Requirements
+
+* Asterisk 11, 12 or 13. Only Asterisk 12/13 have confbridge list flags (muted, admin, marked) so Asterisk 11 is supported partially. 
+* Python 2.7
+
+On Ubuntu:
+```
+sudo apt-get install python-pip python-virtualenv python-dev
+```
+
 Download the latest version:
 ```
 wget https://github.com/litnimax/astconfman/archive/master.zip
@@ -115,6 +125,11 @@ to your /etc/asterisk/confbridge.conf.
 
 Open extensions.conf with your text editor and set your settings in *globals* section.
 
+Open /etc/asterisk/asterisk.conf and be sure that 
+```
+live_dangerously = no
+```
+
 ### Participant menu
 While in the conference participants can use the following DTMF options:
 
@@ -129,4 +144,28 @@ While in the conference participants can use the following DTMF options:
 * 9 - Increase talking volume.
 * 0 - Invite all / not yet connected participants (admin profile only).
 
+### Frequent errors
+#### Asterisk monitor path not accessible
+```
+(env)max@linux:~/astconfman/astconfman$ ./manage.py init
+Traceback (most recent call last):
+  File "./manage.py", line 7, in <module>
+    from app import app, db, migrate
+  File "/home/max/astconfman/astconfman/app.py", line 60, in <module>
+    from views import asterisk
+  File "/home/max/astconfman/astconfman/views.py", line 608, in <module>
+    menu_icon_value='glyphicon-hdd'
+  File "/home/max/astconfman/env/local/lib/python2.7/site-packages/flask_admin/contrib/fileadmin.py", line 193, in __init__
+    raise IOError('FileAdmin path "%s" does not exist or is not accessible' % base_path)
+IOError: FileAdmin path "/var/spool/asterisk/monitor/" does not exist or is not accessible
 
+(env)max@linux:~/astconfman/astconfman$ ls -l /var/spool/
+итого 16
+drwxr-x--- 9 asterisk asterisk 4096 сент.  1 22:20 asterisk
+drwxr-xr-x 5 root     root     4096 сент.  1 22:09 cron
+lrwxrwxrwx 1 root     root        7 сент.  1 22:05 mail -> ../mail
+drwxr-xr-x 2 root     root     4096 апр.  11  2014 plymouth
+drwx------ 2 syslog   adm      4096 дек.   4  2013 rsyslog
+(env)max@linux:~/astconfman/astconfman$
+```
+To fix it add user running astwebconf to asterisk group.

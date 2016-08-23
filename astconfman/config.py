@@ -17,15 +17,6 @@ BRAND_LOGO = 'static/logo.png'
 # URL to redirect when clicked on LOGO. Put here '#' if redirect is not required.
 BRAND_LOGO_URL = 'http://www.pbxware.ru/'
 
-# 
-ADMINS = {
-    'admin': {
-        'password': 'test',
-        'email': '',
-    },
-
-}
-
 # ASTERISK_IPADDR - IP Address of Asterisk server. All other requests will be denied.
 ASTERISK_IPADDR = '127.0.0.1'
 
@@ -48,10 +39,26 @@ SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DATABASE_FILE
 
 WTF_CSRF_ENABLED = True
 
+SECURITY_REGISTERABLE = False
+SECURITY_RECOVERABLE = False
+SECURITY_SEND_PASSWORD_CHANGE_EMAIL = False
+SECURITY_USER_IDENTITY_ATTRIBUTES = 'username'
+SECURITY_PASSWORD_HASH = 'sha512_crypt'
+SECURITY_PASSWORD_SALT = 'bla-bla-bla'
+
+
 # Asterisk
 ASTERISK_SPOOL_DIR = '/var/spool/asterisk/outgoing/'
 ASTERISK_MONITOR_DIR = '/var/spool/asterisk/monitor/'
 ASTERISK_EXECUTABLE = '/usr/sbin/asterisk'
+ASTERISK_SSH_ENABLED = False
+ASTERISK_SSH_PORT = '22'
+ASTERISK_SSH_HOST = 'localhost'
+ASTERISK_SSH_USER = 'asterisk'
+ASTERISK_SSH_KEY = 'ssh-rsa AAAAB3NzaC1yc2EA...' # Put your key in instance config
+
+# You can remove any tab by adding it here.
+DISABLED_TABS = []
 
 # Callout template.
 CALLOUT_TEMPLATE = """Channel: Local/%(number)s@confman-dialout

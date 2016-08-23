@@ -14,7 +14,11 @@
 
 
 <div class='container'>
-    <form class="form" method="POST" action="{{ url_for('conference.add_contacts') }}">
+    {% if current_user.has_role('admin') %}
+    <form class="form" method="POST" action="{{ url_for('conference_admin.add_contacts') }}">
+    {% else %}
+    <form class="form" method="POST" action="{{ url_for('conference_user.add_contacts') }}">
+    {% endif %}
     <div class="form-group">
         {% for i in ids %}
             <input type="hidden" name="ids" value="{{ids|join(',')}}">
