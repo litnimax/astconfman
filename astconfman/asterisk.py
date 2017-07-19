@@ -133,7 +133,7 @@ def confbridge_get(confno):
                 'name': line[0],
                 'users': int(line[1]),
                 'marked': False if line[2] == '0' else True,
-                'locked': False if line[3] == 'unlocked' else True
+                'locked': False if line[3] == 'unlocked' or line[3] == 'No' else True
             }
     # If no conference is running return empty dict
     return {
