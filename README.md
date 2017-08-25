@@ -1,7 +1,7 @@
 # Asterisk ConfBridge Manager
 This is a WEB based interface for managing Asterisk ConfBridge application.
 
-**Built on Asterisk ConfBridge, Flask, SocketIO, React.js**
+**Built on Asterisk ConfBridge, Flask, SSE, React.js**
 
 You can request a [new feature](https://github.com/litnimax/astconfman/issues/new) or see current requests and bugs [here](https://github.com/litnimax/astconfman/issues).
 
