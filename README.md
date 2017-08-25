@@ -77,33 +77,12 @@ cd astconfman
 ```
 Now visit http://localhost:5000/ in your browser.
 
-**Default user/password is admin/test**. Don't forget to override it.
+**Default user/password is admin/admin**. Don't forget to override it.
 
 ### Configuration
 #### WEB server configuration
 Go to *instance* folder and create there config.py file with your local settings. See [config.py](https://github.com/litnimax/astconfman/blob/master/astconfman/config.py) for possible options to override.
-Options in config.py file are self-descriptive. Here is an example of instance/config.py file:
-```python
-LANGUAGE = 'ru'
-SECRET_KEY = 'jdjHDHD84s@#$%)skjfnNJsk!@0dKDJD94SJ34p,s}s,!wJ'
-ADMINS = {
-    'max': {
-        'password': 'HJd84h&s34S',
-        'email': 'max@company.com',
-    },
-    'alex': {
-        'password': '87Jsm@#k8!d',
-        'email': 'alex@company.com',
-    },
-}
-
-ASTERISK_IPADDR = '192.168.0.254'
-LISTEN_ADDRESS = '0.0.0.0'
-DATABASE_FILE = '/var/lib/db/astconfman.db'
-ASTERISK_SPOOL_DIR = '/srv/asterisk/var/spool/asterisk/outgoing/'
-ASTERISK_MONITOR_DIR = '/srv/asterisk/var/spool/asterisk/monitor/'
-ASTERISK_EXECUTABLE = '/srv/asterisk/sbin/asterisk'
-```
+Options in config.py file are self-descriptive. 
 
 #### Asterisk configuration
 Asterisk must have CURL function compiled and loaded. Check it with
