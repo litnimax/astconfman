@@ -1,0 +1,12 @@
+[Unit]
+Description=AsteriskConferenceManager
+After=network.target
+
+[Service]
+WorkingDirectory=/etc/asterisk/astconfman/astconfman/
+ExecStart=/etc/asterisk/astconfman/env/bin/python /etc/asterisk/astconfman/astconfman/run.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+Alias=astconfman.service
