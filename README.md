@@ -123,6 +123,20 @@ While in the conference participants can use the following DTMF options:
 * 9 - Increase talking volume.
 * 0 - Invite all / not yet connected participants (admin profile only).
 
+### Dialplan for calling external users
+```
+[confman-dialout]
+include => localph
+include => extph
+
+[localph]
+exten => _XXX,1,Dial(SIP/${EXTEN},60)
+exten => _ХXX,2,Set(ret=${CURL(${CONFMAN_HOST}/asterisk/dial_status/${conf_number}/${participant_number}/${DIALSTATUS})})
+[extph]
+exten => _XXXX.,1,Dial(${DIALOUT_TRUNK1}/${EXTEN},60)
+exten => _XXXX.,2,Set(ret=${CURL(${CONFMAN_HOST}/asterisk/dial_status/${conf_number}/${participant_number}/${DIALSTATUS})})
+```
+
 ### Frequent errors
 #### Asterisk monitor path not accessible
 ```
