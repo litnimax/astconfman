@@ -1,5 +1,5 @@
 Babel
-Flask
+Flask==0.12.4
 SQLAlchemy==1.2.0b3
 flask-admin==1.3.0
 Flask-BabelEx
@@ -14,7 +14,7 @@ MarkupSafe
 WTForms
 Werkzeug
 blinker
-gevent
+gevent==1.2.2
 transliterate
 itsdangerous
 python-crontab
