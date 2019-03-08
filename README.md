@@ -1,6 +1,6 @@
 # Asterisk ConfBridge Manager
 
-**MAINTAINER IS WANTED**
+**MAINTAINER IS WANTED** If you would like to maintain this repo pls create a new ticket.
 
 This is a WEB based interface for managing Asterisk ConfBridge application.
 
