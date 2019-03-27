@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 from flask import Flask
-from flask.ext.babelex import gettext
-from flask.ext.migrate import MigrateCommand
-from flask.ext.security import utils
-from flask.ext.script import Manager
+from flask_babelex import gettext
+from flask_migrate import MigrateCommand
+from flask_security import utils
+from flask_script import Manager
 from app import app, db, migrate, user_datastore
 from models import Contact, Conference, Participant
 from models import ParticipantProfile, ConferenceProfile

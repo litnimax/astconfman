@@ -1,6 +1,6 @@
 # *-* encoding: utf-8 *-*
 import os
-from flask.ext.babelex import lazy_gettext as _
+from flask_babelex import lazy_gettext as _
 
 # Default Language. Currenly only 'ru' and 'en' are supported.
 LANGUAGE = 'en'

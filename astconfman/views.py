@@ -4,16 +4,16 @@ from os.path import dirname, join
 from crontab import CronTab
 from flask import request, render_template, Response, redirect, url_for
 from flask import Blueprint, flash, abort, jsonify
-from flask.ext.admin import  Admin, AdminIndexView, BaseView, expose
-from flask.ext.admin.contrib.sqla.ajax import QueryAjaxModelLoader
+from flask_admin import  Admin, AdminIndexView, BaseView, expose
+from flask_admin.contrib.sqla.ajax import QueryAjaxModelLoader
 from flask_admin import helpers as admin_helpers
-from flask.ext.admin.actions import action
-from flask.ext.admin.contrib.sqla import ModelView, filters
-from flask.ext.admin.contrib.fileadmin import FileAdmin
-from flask.ext.admin.form import rules
-from flask.ext.babelex import lazy_gettext as _, gettext
-from flask.ext.security import current_user
-from flask.ext.security.utils import encrypt_password
+from flask_admin.actions import action
+from flask_admin.contrib.sqla import ModelView, filters
+from flask_admin.contrib.fileadmin import FileAdmin
+from flask_admin.form import rules
+from flask_babelex import lazy_gettext as _, gettext
+from flask_security import current_user
+from flask_security.utils import encrypt_password
 from jinja2 import Markup
 from wtforms.fields import PasswordField
 from wtforms.validators import Required, ValidationError

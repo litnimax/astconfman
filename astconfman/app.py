@@ -6,12 +6,12 @@ from gevent.queue import Queue
 from urllib import urlencode
 from flask import Flask, send_from_directory, request, Response, session
 from flask import g, redirect, url_for
-from flask.ext.admin import Admin, AdminIndexView
-from flask.ext.babelex import Babel, gettext, lazy_gettext
-from flask.ext.migrate import Migrate
-from flask.ext.security import Security, SQLAlchemyUserDatastore, \
+from flask_admin import Admin, AdminIndexView
+from flask_babelex import Babel, gettext, lazy_gettext
+from flask_migrate import Migrate
+from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, login_required
-from flask.ext.sqlalchemy import SQLAlchemy, models_committed
+from flask_sqlalchemy import SQLAlchemy, models_committed
 
 
 app = Flask('AstConfMan', instance_relative_config=True)

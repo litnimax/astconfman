@@ -2,7 +2,7 @@ import commands
 import os
 import shutil
 import tempfile
-from flask.ext.babelex import gettext
+from flask_babelex import gettext
 from transliterate import translit
 from app import app
 
