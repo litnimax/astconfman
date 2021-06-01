@@ -977,10 +977,11 @@ def unmute_request(conf_number, callerid):
 
 talkers = []
 from asterisk2.ami import AMIClient
-#from asterisk.ami import AutoReconnect
+from asterisk2.ami import AutoReconnect
 client = AMIClient(address='127.0.0.1',port=5038)
 client.login(username='admin',secret='7890ec8ff2955ec70a1b390b62f023da')
 from asterisk2.ami import EventListener
+AutoReconnect(client)
 
 @asterisk.route('/get_talkers_on/<int:conf_number>/<callerid>')
 def update_talkers_on(conf_number,callerid):
