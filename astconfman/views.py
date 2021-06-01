@@ -4,16 +4,16 @@ from os.path import dirname, join
 from crontab import CronTab
 from flask import request, render_template, Response, redirect, url_for
 from flask import Blueprint, flash, abort, jsonify
-from flask_admin import  Admin, AdminIndexView, BaseView, expose
-from flask_admin.contrib.sqla.ajax import QueryAjaxModelLoader
+from flask.ext.admin import  Admin, AdminIndexView, BaseView, expose
+from flask.ext.admin.contrib.sqla.ajax import QueryAjaxModelLoader
 from flask_admin import helpers as admin_helpers
-from flask_admin.actions import action
-from flask_admin.contrib.sqla import ModelView, filters
-from flask_admin.contrib.fileadmin import FileAdmin
-from flask_admin.form import rules
-from flask_babelex import lazy_gettext as _, gettext
-from flask_security import current_user
-from flask_security.utils import encrypt_password
+from flask.ext.admin.actions import action
+from flask.ext.admin.contrib.sqla import ModelView, filters
+from flask.ext.admin.contrib.fileadmin import FileAdmin
+from flask.ext.admin.form import rules
+from flask.ext.babelex import lazy_gettext as _, gettext
+from flask.ext.security import current_user
+from flask.ext.security.utils import encrypt_password
 from jinja2 import Markup
 from wtforms.fields import PasswordField
 from wtforms.validators import Required, ValidationError
@@ -23,8 +23,6 @@ from utils.validators import is_number, is_participant_uniq, is_crontab_valid
 from app import app, db, security, sse_notify, User, Role
 from forms import ContactImportForm, ConferenceForm
 from asterisk import *
-
-
 
 class AuthBaseView(BaseView):
     def is_accessible(self):
@@ -961,6 +959,9 @@ def leave_conference(conf_number, callerid):
     conference = Conference.query.filter_by(number=conf_number).first_or_404()
     conference.log(message)
     sse_notify(conference.id, 'update_participants')
+    for num in talkers:
+        if (  num == callerid ):
+            talkers.remove(callerid)
     return 'OK'
 
 
@@ -974,10 +975,81 @@ def unmute_request(conf_number, callerid):
     sse_notify(conference.id, 'unmute_request', callerid)
     return 'OK'
 
+talkers = []
+from asterisk2.ami import AMIClient
+#from asterisk.ami import AutoReconnect
+client = AMIClient(address='127.0.0.1',port=5038)
+client.login(username='admin',secret='7890ec8ff2955ec70a1b390b62f023da')
+from asterisk2.ami import EventListener
+
+@asterisk.route('/get_talkers_on/<int:conf_number>/<callerid>')
+def update_talkers_on(conf_number,callerid):
+   message = gettext('Number %(num)s is talking.', num=callerid)
+   conference = Conference.query.filter_by(number=conf_number).first_or_404()
+   conference.log(message)
+   sse_notify(conference.id, 'update_participants')
+   return 'OK'
+
+@asterisk.route('/get_talkers_off/<int:conf_number>/<callerid>')
+def update_talkers_off(conf_number,callerid):
+   message = gettext('Number %(num)s is shut up.', num=callerid)
+   conference = Conference.query.filter_by(number=conf_number).first_or_404()
+   conference.log(message)
+   sse_notify(conference.id, 'update_participants')
+   return 'OK'
+
+def event_listener_talk(event,**kwargs):
+#    print(event.keys['CallerIDNum'],"talk")
+    txt = event.keys['CallerIDNum']
+    data = [str(s) for s in txt.split() if s.isdigit()]
+    talkers.append(data[0])
+    os.system(gettext('wget -O - --no-proxy http://localhost:5000/asterisk/get_talkers_on/%(conf)s/%(num)s 2>/dev/null', conf=event.keys['Conference'], num=event.keys['CallerIDNum']))
+
+def event_listener_stoptalk(event,**kwargs):
+#    print(event.keys['CallerIDNum'],"donttalk")
+#    print('ConfbridgeTalking',event)
+    txt = event.keys['CallerIDNum']
+    data = [str(s) for s in txt.split() if s.isdigit()]
+    talkers.remove(data[0])
+    os.system(gettext('wget -O - --no-proxy http://localhost:5000/asterisk/get_talkers_off/%(conf)s/%(num)s 2>/dev/null', conf=event.keys['Conference'], num=event.keys['CallerIDNum']))
+
+client.add_event_listener(
+    on_event=event_listener_talk,
+    white_list='ConfbridgeTalking',
+#    Conference='26098',
+    TalkingStatus='on',
+)
+
+client.add_event_listener(
+    on_event=event_listener_stoptalk,
+    white_list='ConfbridgeTalking',
+#    Conference='26098',
+    TalkingStatus='off',
+)
+
+
 
 @asterisk.route('/online_participants.json/<int:conf_number>')
 def online_participants_json(conf_number):
-    # This is public view called from WEB clients
-    ret = confbridge_list_participants(conf_number)
+    ret = []
+    ret2 = confbridge_list_participants(conf_number)
+    for i in ret2:
+                global talkers
+                for num in talkers:
+                    if (  num ==  i['callerid'] ):
+                         i['callerid'] = i['callerid'] + " " + gettext("Talking")
+                ret.append ({
+                'id': '',
+                'name': 'testing',
+                'phone': i['callerid'],
+                'callerid': i['callerid'],
+                'is_invited': False,
+                'flags': i['flags'],
+                'channel': i['channel'],
+                'is_online': True
+                 }
+                 )
     return Response(response=json.dumps(ret),
                     status=200, mimetype='application/json')
+
+
