@@ -1,6 +1,6 @@
 Babel
 Flask==0.12.4
-SQLAlchemy==1.2.0b3
+SQLAlchemy==1.3.0
 flask-admin==1.3.0
 Flask-BabelEx
 Flask-Bootstrap
