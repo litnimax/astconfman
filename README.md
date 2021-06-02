@@ -113,6 +113,7 @@ Open /etc/asterisk/asterisk.conf and be sure that
 live_dangerously = no
 ```
 To enable AMI events put content of astconfman/asterisk_etc/manager.conf file into /etc/asterisk/manager.conf or change AMI credentials in 'views.py' manually.
+Don't forget to enable talker detection events in participant profile settings.
 
 ### Participant menu
 While in the conference participants can use the following DTMF options:
