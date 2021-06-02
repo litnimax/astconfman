@@ -20,3 +20,4 @@ itsdangerous
 python-crontab
 pytz
 speaklater
+asterisk-ami
