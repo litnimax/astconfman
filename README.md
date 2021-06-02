@@ -69,6 +69,7 @@ cd astconfman
 virtualenv env
 source env/bin/activate
 pip install -r requirements.txt
+mv env/lib/python2.7/site-packages/asterisk/ env/lib/python2.7/site-packages/asterisk2/
 ```
 The above will download and install all runtime requirements.
 
@@ -111,6 +112,7 @@ Open /etc/asterisk/asterisk.conf and be sure that
 ```
 live_dangerously = no
 ```
+To enable AMI events put content of astconfman/asterisk_etc/manager.conf file into /etc/asterisk/manager.conf or change AMI credentials in 'views.py' manually.
 
 ### Participant menu
 While in the conference participants can use the following DTMF options:
