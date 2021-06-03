@@ -979,7 +979,7 @@ talkers = []
 from asterisk2.ami import AMIClient
 from asterisk2.ami import AutoReconnect
 client = AMIClient(address='127.0.0.1',port=5038)
-client.login(username='admin',secret='7890ec8ff2955ec70a1b390b62f023da')
+client.login(username='conf',secret='7890ec8ff2955ec70a1b390b62f023da')
 from asterisk2.ami import EventListener
 AutoReconnect(client)
 
