@@ -12,7 +12,6 @@ Flask-Security
 Jinja2
 MarkupSafe
 WTForms
-Werkzeug
 blinker
 gevent==1.2.2
 transliterate
