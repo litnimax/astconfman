@@ -12,7 +12,6 @@ Flask-Security
 Jinja2
 MarkupSafe
 WTForms
-Werkzeug
 blinker
 gevent==1.2.2
 transliterate
@@ -21,3 +20,6 @@ python-crontab
 pytz
 speaklater
 asterisk-ami
+alembic==0.8.6
+Werkzeug==0.11.10
+email_validator
