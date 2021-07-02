@@ -21,3 +21,4 @@ python-crontab
 pytz
 speaklater
 asterisk-ami
+alembic==0.8.6
