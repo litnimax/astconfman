@@ -20,7 +20,7 @@ app.config.from_object('config')
 
 # For smooth language switcher
 def append_to_query(s, param, value):
-    params = dict(request.args.items())
+    params = {}
     params[param] = value
     return '%s?%s' % (request.path, urlencode(params))
 app.jinja_env.filters['append_to_query'] = append_to_query
