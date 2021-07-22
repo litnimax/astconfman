@@ -1032,6 +1032,7 @@ client.add_event_listener(
 
 @asterisk.route('/online_participants.json/<int:conf_number>')
 def online_participants_json(conf_number):
+    talking_gl = False
     ret = []
     ret2 = confbridge_list_participants(conf_number)
     for i in ret2:
@@ -1040,15 +1041,17 @@ def online_participants_json(conf_number):
                 if ( contac ):
                     phone = contac.name
                 for num in talkers:
-                    if (  num ==  i['callerid'] ):
-                         if ( contac ):
-                             phone = contac.name + " " + gettext("Talking")
-                         else:
-                             phone = i['callerid'] + " " + gettext("Talking")
+                    if (  num ==  i['callerid'] ):     
+                        talking_gl = True
+ #                        if ( contac ):
+ #                            phone = contac.name + " " + gettext("Talking")
+ #                        else:
+ #                            phone = i['callerid'] + " " + gettext("Talking")
                 ret.append ({
                 'id': '',
                 'name': '',
                 'phone': phone,
+                'talking_gl': talking_gl,
                 'callerid': phone,
                 'is_invited': False,
                 'flags': i['flags'],
