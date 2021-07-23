@@ -1036,19 +1036,22 @@ def online_participants_json(conf_number):
     ret2 = confbridge_list_participants(conf_number)
     for i in ret2:
                 phone = i['callerid']
+                talking_gl = False
                 contac = Contact.query.filter_by(phone=i['callerid']).first()
                 if ( contac ):
                     phone = contac.name
                 for num in talkers:
-                    if (  num ==  i['callerid'] ):
-                         if ( contac ):
-                             phone = contac.name + " " + gettext("Talking")
-                         else:
-                             phone = i['callerid'] + " " + gettext("Talking")
+                    if (  num ==  i['callerid'] ):     
+                        talking_gl = True
+ #                        if ( contac ):
+ #                            phone = contac.name + " " + gettext("Talking")
+ #                        else:
+ #                            phone = i['callerid'] + " " + gettext("Talking")
                 ret.append ({
                 'id': '',
                 'name': '',
                 'phone': phone,
+                'talking_gl': talking_gl,
                 'callerid': phone,
                 'is_invited': False,
                 'flags': i['flags'],

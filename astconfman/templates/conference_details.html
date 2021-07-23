@@ -129,6 +129,7 @@
                         var mutedSpan;
                         var adminSpan;
                         var markedSpan;
+                        var talkingSpan;
                         if (p.flags.indexOf('m') != -1) {
                             mutedBtn = <li><a href={"{{url_for('.unmute', conf_id=model.id, channel='')}}" + p.channel}><span className="glyphicon glyphicon-volume-up"></span> {{ _('Unmute') }}</a></li>
                             mutedSpan = <span className="glyphicon glyphicon-volume-off"></span>
@@ -141,13 +142,17 @@
                         }                       
                         if (p.flags.indexOf('M') != -1) {
                             markedSpan = <span className="glyphicon glyphicon-king"></span>
-                        }                                               
+                        } 
+                        if (p.talking_gl) {
+                            talkingSpan = <span className="glyphicon glyphicon-volume-up"></span>
+                        }
                         return (
                             <div className='btn-group'>
                                 <button id={'participant-' + p.callerid} className="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                                 {mutedSpan}
                                 {adminSpan}
                                 {markedSpan}
+                                {talkingSpan}
                                 {' ' + p.callerid + ' '} 
                                 <span className="caret"></span>
                                 </button>
