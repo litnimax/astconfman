@@ -1032,11 +1032,11 @@ client.add_event_listener(
 
 @asterisk.route('/online_participants.json/<int:conf_number>')
 def online_participants_json(conf_number):
-    talking_gl = False
     ret = []
     ret2 = confbridge_list_participants(conf_number)
     for i in ret2:
                 phone = i['callerid']
+                talking_gl = False
                 contac = Contact.query.filter_by(phone=i['callerid']).first()
                 if ( contac ):
                     phone = contac.name
