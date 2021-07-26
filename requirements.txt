@@ -7,7 +7,7 @@ Flask-Bootstrap
 Flask-SQLAlchemy
 Flask-WTF
 Flask-Script
-Flask-Migrate
+Flask-Migrate==2.7.0
 Flask-Security
 Jinja2
 MarkupSafe
