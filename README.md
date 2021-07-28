@@ -168,3 +168,6 @@ drwx------ 2 syslog   adm      4096 дек.   4  2013 rsyslog
 (env)max@linux:~/astconfman/astconfman$
 ```
 To fix it add user running astwebconf to asterisk group.
+
+#### Conference makes multiple outgoing calls on dialout call
+Check if run.py are running with same user as Asterisk and what env directory has read-write access for Asterisk user.
