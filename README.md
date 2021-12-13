@@ -53,6 +53,14 @@ On Ubuntu:
 sudo apt-get install python-pip python-virtualenv python-dev
 ```
 
+In Debian 11 pip2 and virtualenv was deleted from repository, install them manually:
+
+```
+curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py
+sudo python2 get-pip.py
+sudo pip2 install virtualenv
+```
+
 Download the latest version:
 ```
 wget https://github.com/litnimax/astconfman/archive/master.zip
