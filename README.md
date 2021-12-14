@@ -76,7 +76,7 @@ Next steps:
 cd astconfman
 virtualenv env
 source env/bin/activate
-pip install -r requirements.txt
+pip2 install -r requirements.txt
 mv env/lib/python2.7/site-packages/asterisk/ env/lib/python2.7/site-packages/asterisk2/
 ```
 The above will download and install all runtime requirements.
