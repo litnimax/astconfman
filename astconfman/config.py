@@ -21,7 +21,7 @@ BRAND_LOGO_URL = 'http://www.pbxware.ru/'
 ASTERISK_IPADDR = '127.0.0.1'
 
 # LISTEN_ADDRESS - Interfaces to bind to. '0.0.0.0' for all interfaces.
-LISTEN_ADDRESS = '127.0.0.1'
+LISTEN_ADDRESS = '0.0.0.0'
 
 # LISTEN_PORT - Port to listen on.
 LISTEN_PORT = 5000
