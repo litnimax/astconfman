@@ -23,6 +23,12 @@ from utils.validators import is_number, is_participant_uniq, is_crontab_valid
 from app import app, db, security, sse_notify, User, Role
 from forms import ContactImportForm, ConferenceForm
 from asterisk import *
+from asterisk2.ami import AMIClient
+from asterisk2.ami import AutoReconnect
+from asterisk2.ami import EventListener
+
+talkers = []
+
 
 class AuthBaseView(BaseView):
     def is_accessible(self):
@@ -95,6 +101,7 @@ class ContactAdmin(MyModelView, AuthBaseView):
     create_template = 'contact_create.html'
     column_searchable_list = ['phone', 'name']
     column_filters = ['user']
+    page_size = 500
     form_args = {
         'phone': dict(validators=[Required(), is_number])
     }
@@ -156,6 +163,7 @@ class ContactUser(UserModelView, ContactAdmin):
 
 class ParticipantAdmin(MyModelView, AuthBaseView):
     column_searchable_list = ('phone', 'name')
+    page_size = 500
     column_filters = ['conference', 'profile', 'user']
     column_formatters = {
         'legend': lambda v,c,m,n: legend_formatter(v,c,m,n)
@@ -975,14 +983,6 @@ def unmute_request(conf_number, callerid):
     sse_notify(conference.id, 'unmute_request', callerid)
     return 'OK'
 
-talkers = []
-from asterisk2.ami import AMIClient
-from asterisk2.ami import AutoReconnect
-client = AMIClient(address='127.0.0.1',port=5038)
-client.login(username='conf',secret='7890ec8ff2955ec70a1b390b62f023da')
-from asterisk2.ami import EventListener
-AutoReconnect(client)
-
 @asterisk.route('/get_talkers_on/<int:conf_number>/<callerid>')
 def update_talkers_on(conf_number,callerid):
    message = gettext('Number %(num)s is talking.', num=callerid)
@@ -993,63 +993,96 @@ def update_talkers_on(conf_number,callerid):
 
 @asterisk.route('/get_talkers_off/<int:conf_number>/<callerid>')
 def update_talkers_off(conf_number,callerid):
-   message = gettext('Number %(num)s is shut up.', num=callerid)
+   message = gettext('Number %(num)s is fell silent.', num=callerid)
    conference = Conference.query.filter_by(number=conf_number).first_or_404()
    conference.log(message)
    sse_notify(conference.id, 'update_participants')
    return 'OK'
 
-def event_listener_talk(event,**kwargs):
-#    print(event.keys['CallerIDNum'],"talk")
-    txt = event.keys['CallerIDNum']
-    data = [str(s) for s in txt.split() if s.isdigit()]
-    talkers.append(data[0])
-    os.system(gettext('wget -O - --no-proxy http://localhost:5000/asterisk/get_talkers_on/%(conf)s/%(num)s 2>/dev/null', conf=event.keys['Conference'], num=event.keys['CallerIDNum']))
+client = AMIClient(address='127.0.0.1',port=5038)
+client.login(username=app.config['AMI_USER'],secret=app.config['AMI_PASSWORD'])
+AutoReconnect(client)
 
-def event_listener_stoptalk(event,**kwargs):
-#    print(event.keys['CallerIDNum'],"donttalk")
-#    print('ConfbridgeTalking',event)
+def event_listener_talk(event,**kwargs):
     txt = event.keys['CallerIDNum']
-    data = [str(s) for s in txt.split() if s.isdigit()]
-    talkers.remove(data[0])
-    os.system(gettext('wget -O - --no-proxy http://localhost:5000/asterisk/get_talkers_off/%(conf)s/%(num)s 2>/dev/null', conf=event.keys['Conference'], num=event.keys['CallerIDNum']))
+    if str(txt).isdigit():
+        talkers.append(txt)
+        os.system(gettext('wget -O - --no-proxy http://localhost:5000/asterisk/get_talkers_on/%(conf)s/%(num)s 2>/dev/null', conf=event.keys['Conference'], num=txt))
 
 client.add_event_listener(
     on_event=event_listener_talk,
     white_list='ConfbridgeTalking',
-#    Conference='26098',
     TalkingStatus='on',
 )
+
+def event_listener_stoptalk(event,**kwargs):
+    txt = event.keys['CallerIDNum']
+    if str(txt).isdigit():
+        talkers.remove(txt)
+        os.system(gettext('wget -O - --no-proxy http://localhost:5000/asterisk/get_talkers_off/%(conf)s/%(num)s 2>/dev/null', conf=event.keys['Conference'], num=txt))
 
 client.add_event_listener(
     on_event=event_listener_stoptalk,
     white_list='ConfbridgeTalking',
-#    Conference='26098',
     TalkingStatus='off',
 )
-
-
 
 @asterisk.route('/online_participants.json/<int:conf_number>')
 def online_participants_json(conf_number):
     ret = []
     ret2 = confbridge_list_participants(conf_number)
-    for i in ret2:
-                phone = i['callerid']
+    conf = Conference.query.filter_by(number=conf_number).first()
+    if not conf:
+        return 'NOCONF'
+    online_participants = [
+        k['callerid'] for k in ret2]
+    partici = [
+        k.phone for k in conf.participants]
+    
+    for p in conf.participants:
                 talking_gl = False
+                if (p.phone in online_participants):
+                        online = True
+                        for i in ret2:
+                                for num in talkers:
+                                     if (  num == p.phone ):
+                                          talking_gl = True
+                                if (i['callerid'] == p.phone):
+                                        flag = i['flags']
+                                        channel = i['channel']
+                else:
+                        online = False
+                        flag = ''
+                        channel = ''
+                ret.append({
+                'id': p.id,
+                'name': p.name,
+                'phone': p.phone,
+                'talking_gl': talking_gl,
+                'callerid': p.phone,
+                'is_invited': p.is_invited,
+                'flags': flag,
+                'channel': channel,
+                'is_online': online
+                }
+                )
+    
+    for i in ret2:
+            phone = i['callerid']
+            talking_gl = False
+            if (i['callerid'] not in partici):
                 contac = Contact.query.filter_by(phone=i['callerid']).first()
                 if ( contac ):
-                    phone = contac.name
+                    name = contac.name
                 for num in talkers:
                     if (  num ==  i['callerid'] ):     
                         talking_gl = True
- #                        if ( contac ):
- #                            phone = contac.name + " " + gettext("Talking")
- #                        else:
- #                            phone = i['callerid'] + " " + gettext("Talking")
+
+                else:
+                    name=''                    
                 ret.append ({
                 'id': '',
-                'name': '',
+                'name': name,
                 'phone': phone,
                 'talking_gl': talking_gl,
                 'callerid': phone,
@@ -1061,5 +1094,6 @@ def online_participants_json(conf_number):
                  )
     return Response(response=json.dumps(ret),
                     status=200, mimetype='application/json')
+
 
 

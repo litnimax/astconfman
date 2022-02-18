@@ -4,7 +4,8 @@
 {{ super() }}
 
     <style type="text/css">
-        .customNoMargin {margin-left: 0;}
+        .customNoMargin { padding: 5px 2px 5px 2px; width: 100%; }
+        .col-md-6 { width: 20%; }
     </style>
     <script type="text/javascript" src="{{url_for('static', filename='js/jquery-2.1.4.min.js')}}"></script>
     <script src="{{url_for('static', filename='js/react-0.13.3.min.js')}}"></script>
@@ -146,22 +147,29 @@
                         if (p.talking_gl) {
                             talkingSpan = <span className="glyphicon glyphicon-volume-up"></span>
                         }
+                        if (p.name) {
+                               subscriberSpan = <span className="text-left">{p.name}</span>
+                        } else {
+                               subscriberSpan = <span className="text-left">{p.callerid}</span>
+                        }
                         return (
-                            <div className='btn-group'>
-                                <button id={'participant-' + p.callerid} className="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                        <div className='col-md-6'>
+                            <div className='btn-group customNoMargin'>
+                                <button id={'participant-' + p.callerid} className={'btn ' + (p.is_online ? 'btn-success' : 'btn-danger') + ' dropdown-toggle customNoMargin'} type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                                 {mutedSpan}
                                 {adminSpan}
-                                {markedSpan}
-                                {talkingSpan}
-                                {' ' + p.callerid + ' '} 
-                                <span className="caret"></span>
+                                {markedSpan}                            
+                                {subscriberSpan}
+                                <span className="caret"> {talkingSpan}</span>
                                 </button>
                                 <ul className="dropdown-menu" aria-labelledby="dropdownMenu1">
-                                    <li><a href={"{{url_for('.kick', conf_id=model.id , channel='')}}"+p.channel}><span className="glyphicon glyphicon-remove"></span> {{ _('Kick') }} </a></li>
+                                    <li><a href={"{{url_for('.invite_guest', conf_id=model.id)}}?phone="+p.callerid}><span className="glyphicon glyphicon-phone-alt"></span> {{ _('Invite') }} </a></li>
+                                        <li><a href={"{{url_for('.kick', conf_id=model.id , channel='')}}"+p.channel}><span className="glyphicon glyphicon-remove"></span> {{ _('Kick') }} </a></li>
                                     {mutedBtn} 
                                     {unmutedBtn}
                                 </ul>                            
                             </div>
+                          </div>
                         ) 
                     });                    
                     return (
