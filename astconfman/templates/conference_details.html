@@ -6,6 +6,7 @@
     <style type="text/css">
         .customNoMargin { padding: 5px 2px 5px 2px; width: 100%; }
         .col-md-6 { width: 20%; }
+        .black { color: black; }
     </style>
     <script type="text/javascript" src="{{url_for('static', filename='js/jquery-2.1.4.min.js')}}"></script>
     <script src="{{url_for('static', filename='js/react-0.13.3.min.js')}}"></script>
@@ -145,7 +146,7 @@
                             markedSpan = <span className="glyphicon glyphicon-king"></span>
                         } 
                         if (p.talking_gl) {
-                            talkingSpan = <span className="glyphicon glyphicon-volume-up"></span>
+                            talkingSpan = <span className="glyphicon glyphicon-volume-up black"></span>
                         }
                         if (p.name) {
                                subscriberSpan = <span className="text-left">{p.name}</span>
