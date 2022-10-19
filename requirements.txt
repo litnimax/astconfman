@@ -22,4 +22,4 @@ speaklater
 asterisk-ami
 alembic==0.8.6
 Werkzeug==0.11.10
-email_validator
+email_validator==1.1.3
