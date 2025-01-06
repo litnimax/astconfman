@@ -314,11 +314,21 @@ class ConferenceAdmin(MyModelView, AuthBaseView):
         conf = Conference.query.get_or_404(conf_id)
         phone = request.args.get('phone', None)
         if phone and phone.isdigit():
-            originate(conf.number, phone,
-                bridge_options=conf.conference_profile.get_confbridge_options(),
-                user_options=conf.public_participant_profile.get_confbridge_options())
-            flash(gettext('Number %(phone)s is called for conference.',
-                          phone=phone))
+            # Check if number in participant list
+            participant = next((p for p in conf.participants if p.phone == phone), None)
+            if participant:
+               options = participant.profile.get_confbridge_options()
+            else:
+                options = conf.public_participant_profile.get_confbridge_options()
+            try:
+                originate(conf.number, phone,
+                          bridge_options=conf.conference_profile.get_confbridge_options(),
+                          user_options=options)
+                flash(gettext('Number %(phone)s is called for conference.', phone=phone))
+            except Exception as e:
+                flash(gettext('Failed to call number %(phone)s: %(error)s', phone=phone, error=str(e)), 'error')
+        else:
+            flash(gettext('Invalid phone number: %(phone)s', phone=phone), 'error')   
         time.sleep(1)
         return redirect(url_for('.details_view', id=conf_id))
 
